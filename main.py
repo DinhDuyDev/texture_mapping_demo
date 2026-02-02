@@ -30,11 +30,9 @@ def game():
                 if event.key == pygame.K_ESCAPE:
                     running = False
                 elif event.key == pygame.K_UP:
-                    # controller.resolution += 5
-                    controller.z_look += 20
+                    controller.resolution += 5
                 elif event.key == pygame.K_DOWN:
-                    # controller.resolution -= 5
-                    controller.z_look -= 20
+                    controller.resolution -= 5
                 elif event.key == pygame.K_RETURN:
                     if controller.resolution == player.MAX_RES:
                         controller.resolution = player.EXTREME_RES
@@ -47,13 +45,26 @@ def game():
 
         draw_dest.fill((0,0,0))
 
+        # for i in range(len(map.game_map)):
+        #     for j in range(len(map.game_map[0])):
+        #         if map.game_map[i][j] != 0:
+        #             pygame.draw.rect(draw_dest, (200, 200, 200), (j * settings.cell_width/2, i * settings.cell_width/2, settings.cell_width/2, settings.cell_width/2))
+        #         else:
+        #             pygame.draw.rect(draw_dest, (255, 255, 255), (j * settings.cell_width/2, i * settings.cell_width/2, settings.cell_width/2, settings.cell_width/2), width=2)
+
         # Drawing the skybox
-        draw_dest.blit(textures.doom_sky_texture_scaled, textures.doom_sky_texture_scaled.get_rect(topleft=(0,-160 + controller.z_look)))
-        pygame.draw.rect(draw_dest, (100, 100, 100), (0, 180+controller.z_look, 640, 640))
+        draw_dest.blit(textures.doom_sky_texture_scaled, textures.doom_sky_texture_scaled.get_rect(topleft=(0,-160)))
+        pygame.draw.rect(draw_dest, (100, 100, 100), (0, 180, 640, 640))
 
         controller.rendering(draw_dest, map_geometry)
         # player.sprite_y -= 0.001
         # player.sprite_hitbox.y -= 0.001
+        
+        # # player
+        # pygame.draw.circle(draw_dest, (255, 0, 0), (controller.x/2, controller.y/2), 3)
+        # pygame.draw.line(draw_dest, (255, 255, 0), (controller.x/2, controller.y/2), (controller.x/2 + math.cos(math.radians(controller.direction)) * 16, controller.y/2 - math.sin(math.radians(controller.direction)) * 16))
+        # pygame.draw.circle(draw_dest, (255, 0, 0), (player.sprite_x/2, player.sprite_y/2), 3)
+
         
         fps_counter = debug_font.render(str(clock.get_fps()), False, (255, 0, 0), (0, 255, 0))
         fps_rect = fps_counter.get_rect(topleft=(0,0))
@@ -69,4 +80,3 @@ def game():
 
 if __name__ == "__main__":
     game()
-    utilityfuncs.utilityfuncs()

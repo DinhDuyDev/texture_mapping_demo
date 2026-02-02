@@ -9,13 +9,17 @@ MAX_RES = 640
 DEFAULT_RES = 160
 BETTER_RES = 320
 MIN_RES = 80
+RAYCAST_SIZE_SCALE = 360 # 360
 
 # 16x16 resize
 sprite_x, sprite_y = 8 * settings.cell_width, 3 * settings.cell_width
-sprite_hitbox:pygame.Rect = pygame.Rect(sprite_x - 8, sprite_y - 8, 16, 16)
+sprite_hitbox:pygame.Rect = pygame.Rect(sprite_x - 16, sprite_y - 8, 32, 32)
 mobster_sprite = textures.mobster_texture
 mobster_sprite_subsurface = textures.mobster_texture_subsurfaces
 sprite_direction = 0
+
+lightsource = (8 * settings.cell_width, 3 * settings.cell_width)
+light_radius = 128
 
 class Player:
     def __init__(self, x: int, y: int):
@@ -23,7 +27,6 @@ class Player:
         self.y:int = y
         self.resolution = MAX_RES
         self.direction = 0
-        self.z_look = 0
     
     def movement(self, map:list[list[int]]):
         movement_vector = (pygame.key.get_pressed()[pygame.K_w] - pygame.key.get_pressed()[pygame.K_s]) * 2
@@ -116,9 +119,9 @@ class Player:
                         verLength = utilityfuncs.square_distance(self.x, self.y, Hx, Hy)
             
             # Wall height calculation
-            dist = round(utilityfuncs.point_distance(self.x, self.y, hitX, hitY))
+            dist = round(utilityfuncs.point_distance(self.x, self.y, hitX, hitY)) + 0.1
             offset_ratio = math.cos(math.radians(__d - self.direction))
-            height = (360 / (dist/height_scale)) / offset_ratio
+            height = (RAYCAST_SIZE_SCALE / (dist/height_scale)) / offset_ratio
             if __d == 0:
                 height = previous_height
             else:
@@ -131,19 +134,21 @@ class Player:
             if orientation == 1:
                 percentage_of_cube = (hitX - (int(hitX/settings.cell_width) * settings.cell_width)) / settings.cell_width
                 texture_surface = s_texture_sub[int(percentage_of_cube * s_texture.width)]
+                height = min(1280, height)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
-                texture_rect = texture_surface.get_rect(topleft=(i * column_width, h/2-height/2 + self.z_look))
+                texture_rect = texture_surface.get_rect(topleft=(i * column_width, h/2-height/2))
                 dest.blit(texture_surface, texture_rect)
             else:
                 percentage_of_cube = (hitY - (int(hitY/settings.cell_width) * settings.cell_width)) / settings.cell_width
                 texture_surface = s_texture_sub[int(percentage_of_cube * s_texture.width)]
+                height = min(1280, height)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
-                texture_rect = texture_surface.get_rect(topleft=(i * column_width, h/2-height/2 + self.z_look))
+                texture_rect = texture_surface.get_rect(topleft=(i * column_width, h/2-height/2))
                 dest.blit(texture_surface, texture_rect)
 
             # for _ in _:
             # dir_to_sprite = utilityfuncs.point_direction(self.x, self.y, sprite_x, sprite_y)
-            # if abs(dir_to_sprite - self.direction) < fov/2 + 20:
+            # if abs(dir_to_sprite - self.direction) < fov/2:
             #     distance_to_player = utilityfuncs.point_distance(self.x, self.y, sprite_x, sprite_y)
             #     height_of_sprite = (360 / (distance_to_player / height_scale)) / offset_ratio
             #     render_spr = pygame.transform.scale(mobster_sprite, (mobster_sprite.width * (height / mobster_sprite.width), height))
@@ -151,43 +156,70 @@ class Player:
             #     render_rect = render_spr.get_rect(center=(x_onscreen, 180))
             #     dest.blit(render_spr, render_rect)
 
-            
+            if abs(__d - self.direction + fov/2) < 2 or abs(__d - self.direction - fov/2) < 2:
+                pygame.draw.line(dest, (255, 0, 255), (self.x/2, self.y/2), (hitX/2, hitY/2))
+
             # Drawing static sprites
             # 2D sprites like doors / railings would be welcomed here
+            # line_clipped = sprite_hitbox.clipline(self.x, self.y, hitX, hitY)
+            # if line_clipped:
+            #     # Finding out the midpoint of the clipline
+            #     clip_start, clip_end = line_clipped
+            #     mid_x, mid_y = (clip_start[0] + clip_end[0]) / 2, (clip_start[1] + clip_end[1]) / 2
+            #     distance_to_clippoint = utilityfuncs.point_distance(sprite_x, sprite_y, mid_x, mid_y)
+            #     if distance_to_clippoint < 16:
+            #         # translate the distance into the plane that the sprite would be drawn on
+            #         angle_between_clip_and_sprite_plane = utilityfuncs.point_direction(sprite_x, sprite_y, mid_x, mid_y)
+            #         angle_cos = math.cos(math.radians(angle_between_clip_and_sprite_plane - (self.direction + 90)))
+            #         distance_to_contact = distance_to_clippoint * angle_cos
+            #         angle_sign = utilityfuncs.sign(utilityfuncs.point_direction(sprite_x, sprite_y, self.x, self.y) + 90 - utilityfuncs.point_direction(self.x, self.y, mid_x, mid_y))
+            #         contact_x = sprite_x + math.cos(math.radians(self.direction+90 * angle_sign)) * distance_to_contact
+            #         contact_y = sprite_y - math.sin(math.radians(self.direction+90 * angle_sign)) * distance_to_contact 
+
+            #         distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, contact_x, contact_y)
+
+            #         # side coords
+            #         left_x, left_y = sprite_x + math.cos(math.radians(self.direction+90)) * 16, sprite_y - math.sin(math.radians(self.direction + 90)) * 16
+            #         # right_x, right_y = sprite_x + math.cos(math.radians(self.direction - 90)) * 8, sprite_y - math.sin(math.radians(self.direction - 90)) * 8
+            #         distance_from_left = utilityfuncs.point_distance(left_x, left_y, contact_x, contact_y)
+            #         distance_ratio = (distance_from_left / 32) * mobster_sprite.width
+
+            #         # angle to sprite
+            #         subsurface_to_be_drawn = mobster_sprite_subsurface[int(distance_ratio)]
+
+            #         elements_found.append(("sprite", (sprite_x, sprite_y), distance_to_sprite, subsurface_to_be_drawn))
+
             line_clipped = sprite_hitbox.clipline(self.x, self.y, hitX, hitY)
-            if line_clipped:
-                # Finding out the midpoint of the clipline
-                clip_start, clip_end = line_clipped
-                mid_x, mid_y = (clip_start[0] + clip_end[0]) / 2, (clip_start[1] + clip_end[1]) / 2
-                distance_to_clippoint = utilityfuncs.point_distance(sprite_x, sprite_y, mid_x, mid_y)
-                if distance_to_clippoint < 16:
-                    # translate the distance into the plane that the sprite would be drawn on
-                    angle_between_clip_and_sprite_plane = utilityfuncs.point_direction(sprite_x, sprite_y, mid_x, mid_y)
-                    angle_cos = math.cos(math.radians(angle_between_clip_and_sprite_plane - (self.direction + 90)))
-                    distance_to_contact = distance_to_clippoint * angle_cos
-                    angle_sign = utilityfuncs.sign(utilityfuncs.point_direction(sprite_x, sprite_y, self.x, self.y) + 90 - utilityfuncs.point_direction(self.x, self.y, mid_x, mid_y))
-                    contact_x = sprite_x + math.cos(math.radians(self.direction+90 * angle_sign)) * distance_to_contact
-                    contact_y = sprite_y - math.sin(math.radians(self.direction+90 * angle_sign)) * distance_to_contact 
+            sprite_bound_distance = abs(utilityfuncs.dist_to_line((sprite_x, sprite_y), (self.x, self.y), (hitX, hitY)))
+            direction_to_sprite = utilityfuncs.point_direction(self.x, self.y, sprite_x, sprite_y)
+            if sprite_bound_distance < 16 and line_clipped:
+                # angle left / right ==> +90 is the left side
+                angle_side = utilityfuncs.sign(utilityfuncs.point_direction(self.x, self.y, hitX, hitY) - direction_to_sprite)
+                left_x = sprite_x + math.cos(math.radians(self.direction + 90)) * 16
+                left_y = sprite_y - math.sin(math.radians(self.direction + 90)) * 16
+                right_x = sprite_x + math.cos(math.radians(self.direction - 90)) * 16
+                right_y = sprite_y - math.sin(math.radians(self.direction - 90)) * 16
+                contact_x = sprite_x + math.cos(math.radians(self.direction + 90 * angle_side)) * sprite_bound_distance
+                contact_y = sprite_y - math.sin(math.radians(self.direction + 90 * angle_side)) * sprite_bound_distance
+                distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, contact_x, contact_y)
+                distance_from_left = utilityfuncs.point_distance(contact_x, contact_y, left_x, left_y)
+                distance_ratio = (distance_from_left / 32) * mobster_sprite.width
+                subsurface_to_be_drawn = mobster_sprite_subsurface[int(distance_ratio)]
+                elements_found.append(("sprite", (sprite_x, sprite_y), distance_to_sprite, subsurface_to_be_drawn))
+                color = (0, 255, 0)
+                if angle_side > 0:
+                    color = (128, 64, 200)
+                pygame.draw.circle(dest, color, (contact_x/2, contact_y/2), 1)
 
-                    distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, contact_x, contact_y)
-
-                    # side coords
-                    left_x, left_y = sprite_x + math.cos(math.radians(self.direction+90)) * 16, sprite_y - math.sin(math.radians(self.direction + 90)) * 16
-                    # right_x, right_y = sprite_x + math.cos(math.radians(self.direction - 90)) * 8, sprite_y - math.sin(math.radians(self.direction - 90)) * 8
-                    distance_from_left = utilityfuncs.point_distance(left_x, left_y, contact_x, contact_y)
-                    distance_ratio = (distance_from_left / 32) * mobster_sprite.width
-
-                    # angle to sprite
-                    subsurface_to_be_drawn = mobster_sprite_subsurface[int(distance_ratio)]
-
-                    elements_found.append(("sprite", (sprite_x, sprite_y), distance_to_sprite, subsurface_to_be_drawn))
+                pygame.draw.circle(dest, (0, 0, 255), (left_x/2, left_y/2), 2)
+                pygame.draw.circle(dest, (0, 255, 0), (right_x/2, right_y/2), 2)
 
             for element in elements_found:
                 dist = element[2]
                 subsurf = element[3]
-                height_of_element = (360 / (dist/height_scale)) / offset_ratio
+                height_of_element = min(720, (RAYCAST_SIZE_SCALE / (dist/height_scale)) / offset_ratio)
                 scaled_surf = pygame.transform.scale(subsurf, (column_width, height_of_element))
-                scaled_rect = scaled_surf.get_rect(topleft=(i * column_width, h/2 - height_of_element/2 + self.z_look))
+                scaled_rect = scaled_surf.get_rect(topleft=(i * column_width, h/2 - height_of_element/2))
                 dest.blit(scaled_surf, scaled_rect)
                 # pygame.draw.rect(dest, (255, 0, 0), (i * column_width, h/2 - height_of_element/2, column_width, height_of_element))
 

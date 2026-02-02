@@ -4,4 +4,4 @@ Create a virtual environment (to prevent clashes with brew):
     -> this will cause the whole project to take place in THIS virtual environment.
     3. Download your packages accordingly.
 
-Run: source ~/Documents/Computer\ Science/texture_mapping_demo/texture_mapping_demo/myvenv/bin/activate
+Run: source ~/Documents/Computer\ Science/texture_mapping_demo/texture_mapping_demo/projectvenv/bin/activate
