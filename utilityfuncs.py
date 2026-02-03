@@ -25,18 +25,19 @@ def vec_length(a: list[float]|tuple[float,float]) -> float:
         sum += element ** 2
     return sum ** 1/len(a)
 
+# Credit: written by Sebastian Lague: https://www.youtube.com/watch?v=KHuI9bXZS74
 def dist_to_line(point:tuple[float,float], startLine:tuple[float,float], endLine:tuple[float,float]) -> float:
-    # AB_vec = (endLine[0] - startLine[0], endLine[1] - startLine[1])
-    # perpendicular_vec = (-AB_vec[1], AB_vec[0])
-    # AC_vec = (point[0] - startLine[0], point[1] - startLine[1])
-    # distance = (AC_vec[0] * perpendicular_vec[0] + AC_vec[1] * perpendicular_vec[1]) / vec_length(perpendicular_vec)
     if square_distance(startLine[0], startLine[1], endLine[0], endLine[1]) == 0:
         return point_distance(point[0], point[1], startLine[0], startLine[1])
     numerator = abs((point[0] - startLine[0]) * (-endLine[1] + startLine[1]) + (point[1] - startLine[1]) * (endLine[0] - startLine[0]))
-    denominator = ((-endLine[1] + endLine[1]) ** 2 + (endLine[0] - startLine[0]) ** 2) ** 0.5
+    denominator = math.sqrt((-endLine[1] + endLine[1]) ** 2 + (endLine[0] - startLine[0]) ** 2)
     if denominator == 0:
         return 0
     return numerator / denominator
+
+# Credit: written by Sebastian Lague: https://github.com/SebLague/Gamedev-Maths/blob/master/DistanceToLine.cs
+def side_of_line(a:tuple[float,float], b:tuple[float,float], c:tuple[float,float]):
+    return sign((c[0] - a[0]) * (-b[1] + a[1]) + (c[1] - a[1]) * (b[0] - a[0]))
 
 def clamp_directionals(direction: float):
     if direction == 360:
@@ -47,6 +48,8 @@ def clamp_directionals(direction: float):
         elif direction < 0:
             direction += 360
     return direction
+    
+# I'm so lonely
 def utilityfuncs():
     print("Thank you for using utility funcs :)")
 

@@ -9,11 +9,13 @@ MAX_RES = 640
 DEFAULT_RES = 160
 BETTER_RES = 320
 MIN_RES = 80
-RAYCAST_SIZE_SCALE = 360 # 360
+RAYCAST_SIZE_SCALE = 320 # 360
+debug_font = pygame.sysfont.SysFont("Arial", 10, False)
+
 
 # 16x16 resize
 sprite_x, sprite_y = 8 * settings.cell_width, 3 * settings.cell_width
-sprite_hitbox:pygame.Rect = pygame.Rect(sprite_x - 16, sprite_y - 8, 32, 32)
+sprite_hitbox:pygame.Rect = pygame.Rect(sprite_x - 16, sprite_y - 16, 32, 32)
 mobster_sprite = textures.mobster_texture
 mobster_sprite_subsurface = textures.mobster_texture_subsurfaces
 sprite_direction = 0
@@ -27,6 +29,7 @@ class Player:
         self.y:int = y
         self.resolution = MAX_RES
         self.direction = 0
+        self.offset = 0
     
     def movement(self, map:list[list[int]]):
         movement_vector = (pygame.key.get_pressed()[pygame.K_w] - pygame.key.get_pressed()[pygame.K_s]) * 2
@@ -41,25 +44,24 @@ class Player:
         if map[int(self.y/settings.cell_width)][int(conv_x)] == 0:
             self.x += math.cos(math.radians(self.direction)) * movement_vector
 
+        self.x = sprite_x - math.cos(math.radians(self.direction)) * 48
+        self.y = sprite_y + math.sin(math.radians(self.direction)) * 48
 
         rotate_vector = (pygame.key.get_pressed()[pygame.K_a] - pygame.key.get_pressed()[pygame.K_d]) * 2
-        self.direction += rotate_vector * 2
-        
-        if self.direction >= 360:
-            self.direction = 0
-        elif self.direction < 0:
-            self.direction = 360
+        self.direction += 1#rotate_vector * 2
+        self.direction = utilityfuncs.clamp_directionals(self.direction)
 
     def rendering(self, dest: pygame.Surface, map:list[list[int]]):
         w, h = dest.get_width(), dest.get_height()
         map_w, map_h = len(map[0]), len(map)
 
         # BETTER RAYCASTER
-        fov = 100#90
+        fov = 90#90
         height_scale = 40
         __d = self.direction + fov/2
         column_width = w/self.resolution
         previous_height = 0
+        max_dist = -999
 
         for i in range(self.resolution):
             elements_found = [] # [( element_name: str, element_coords: [float, float], distance_to_element: float, subsurface_array )]
@@ -144,17 +146,11 @@ class Player:
                 height = min(1280, height)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
                 texture_rect = texture_surface.get_rect(topleft=(i * column_width, h/2-height/2))
+                shadow_surf = pygame.Surface((column_width, height))
+                shadow_surf.fill((0,0,0))
+                shadow_surf.set_alpha(175)
                 dest.blit(texture_surface, texture_rect)
-
-            # for _ in _:
-            # dir_to_sprite = utilityfuncs.point_direction(self.x, self.y, sprite_x, sprite_y)
-            # if abs(dir_to_sprite - self.direction) < fov/2:
-            #     distance_to_player = utilityfuncs.point_distance(self.x, self.y, sprite_x, sprite_y)
-            #     height_of_sprite = (360 / (distance_to_player / height_scale)) / offset_ratio
-            #     render_spr = pygame.transform.scale(mobster_sprite, (mobster_sprite.width * (height / mobster_sprite.width), height))
-            #     x_onscreen = ((dir_to_sprite - (self.direction - fov/2)) / fov) * self.resolution
-            #     render_rect = render_spr.get_rect(center=(x_onscreen, 180))
-            #     dest.blit(render_spr, render_rect)
+                dest.blit(shadow_surf, texture_rect)
 
             if abs(__d - self.direction + fov/2) < 2 or abs(__d - self.direction - fov/2) < 2:
                 pygame.draw.line(dest, (255, 0, 255), (self.x/2, self.y/2), (hitX/2, hitY/2))
@@ -191,17 +187,18 @@ class Player:
 
             line_clipped = sprite_hitbox.clipline(self.x, self.y, hitX, hitY)
             sprite_bound_distance = abs(utilityfuncs.dist_to_line((sprite_x, sprite_y), (self.x, self.y), (hitX, hitY)))
-            direction_to_sprite = utilityfuncs.point_direction(self.x, self.y, sprite_x, sprite_y)
             if sprite_bound_distance < 16 and line_clipped:
                 # angle left / right ==> +90 is the left side
-                angle_side = utilityfuncs.sign(utilityfuncs.point_direction(self.x, self.y, hitX, hitY) - direction_to_sprite)
+                if sprite_bound_distance > max_dist:
+                    max_dist = sprite_bound_distance
+                angle_side = utilityfuncs.side_of_line((self.x, self.y), (hitX, hitY), (sprite_x, sprite_y))#utilityfuncs.sign(utilityfuncs.point_direction(self.x, self.y, hitX, hitY) - direction_to_sprite)
                 left_x = sprite_x + math.cos(math.radians(self.direction + 90)) * 16
                 left_y = sprite_y - math.sin(math.radians(self.direction + 90)) * 16
                 right_x = sprite_x + math.cos(math.radians(self.direction - 90)) * 16
                 right_y = sprite_y - math.sin(math.radians(self.direction - 90)) * 16
                 contact_x = sprite_x + math.cos(math.radians(self.direction + 90 * angle_side)) * sprite_bound_distance
                 contact_y = sprite_y - math.sin(math.radians(self.direction + 90 * angle_side)) * sprite_bound_distance
-                distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, contact_x, contact_y)
+                distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, sprite_x, sprite_y)
                 distance_from_left = utilityfuncs.point_distance(contact_x, contact_y, left_x, left_y)
                 distance_ratio = (distance_from_left / 32) * mobster_sprite.width
                 subsurface_to_be_drawn = mobster_sprite_subsurface[int(distance_ratio)]
@@ -224,3 +221,9 @@ class Player:
                 # pygame.draw.rect(dest, (255, 0, 0), (i * column_width, h/2 - height_of_element/2, column_width, height_of_element))
 
             __d -= fov/self.resolution
+        
+        print(max_dist)
+        font_rend = debug_font.render(str(max_dist), False, (255, 255, 255))
+        font_rect = font_rend.get_rect(topleft=(128, 64))
+        dest.blit(font_rend, font_rect)
+        pygame.draw.circle(dest, (255, 255, 255), (sprite_x/2, sprite_y/2), 16, 1)
