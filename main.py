@@ -45,13 +45,6 @@ def game():
 
         draw_dest.fill((0,0,0))
 
-        # for i in range(len(map.game_map)):
-        #     for j in range(len(map.game_map[0])):
-        #         if map.game_map[i][j] != 0:
-        #             pygame.draw.rect(draw_dest, (200, 200, 200), (j * settings.cell_width/2, i * settings.cell_width/2, settings.cell_width/2, settings.cell_width/2))
-        #         else:
-        #             pygame.draw.rect(draw_dest, (255, 255, 255), (j * settings.cell_width/2, i * settings.cell_width/2, settings.cell_width/2, settings.cell_width/2), width=2)
-
         # Drawing the skybox
         draw_dest.blit(textures.doom_sky_texture_scaled, textures.doom_sky_texture_scaled.get_rect(topleft=(0,-160)))
         pygame.draw.rect(draw_dest, (100, 100, 100), (0, 180, 640, 640))

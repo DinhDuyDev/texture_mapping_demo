@@ -10,7 +10,6 @@ DEFAULT_RES = 160
 BETTER_RES = 320
 MIN_RES = 80
 RAYCAST_SIZE_SCALE = 320 # 360
-debug_font = pygame.sysfont.SysFont("Arial", 10, False)
 
 
 # 16x16 resize
@@ -19,6 +18,10 @@ sprite_hitbox:pygame.Rect = pygame.Rect(sprite_x - 16, sprite_y - 16, 32, 32)
 mobster_sprite = textures.mobster_texture
 mobster_sprite_subsurface = textures.mobster_texture_subsurfaces
 sprite_direction = 0
+
+all_sprites = [
+
+]
 
 lightsource = (8 * settings.cell_width, 3 * settings.cell_width)
 light_radius = 128
@@ -44,11 +47,8 @@ class Player:
         if map[int(self.y/settings.cell_width)][int(conv_x)] == 0:
             self.x += math.cos(math.radians(self.direction)) * movement_vector
 
-        self.x = sprite_x - math.cos(math.radians(self.direction)) * 48
-        self.y = sprite_y + math.sin(math.radians(self.direction)) * 48
-
         rotate_vector = (pygame.key.get_pressed()[pygame.K_a] - pygame.key.get_pressed()[pygame.K_d]) * 2
-        self.direction += 1#rotate_vector * 2
+        self.direction += rotate_vector * 2
         self.direction = utilityfuncs.clamp_directionals(self.direction)
 
     def rendering(self, dest: pygame.Surface, map:list[list[int]]):
@@ -185,6 +185,7 @@ class Player:
 
             #         elements_found.append(("sprite", (sprite_x, sprite_y), distance_to_sprite, subsurface_to_be_drawn))
 
+            is_in_fov = abs(utilityfuncs.point_direction(self.x, self.y, sprite_x, sprite_y) - self.direction) < fov/2 + 20
             line_clipped = sprite_hitbox.clipline(self.x, self.y, hitX, hitY)
             sprite_bound_distance = abs(utilityfuncs.dist_to_line((sprite_x, sprite_y), (self.x, self.y), (hitX, hitY)))
             if sprite_bound_distance < 16 and line_clipped:
@@ -218,12 +219,7 @@ class Player:
                 scaled_surf = pygame.transform.scale(subsurf, (column_width, height_of_element))
                 scaled_rect = scaled_surf.get_rect(topleft=(i * column_width, h/2 - height_of_element/2))
                 dest.blit(scaled_surf, scaled_rect)
-                # pygame.draw.rect(dest, (255, 0, 0), (i * column_width, h/2 - height_of_element/2, column_width, height_of_element))
 
             __d -= fov/self.resolution
-        
-        print(max_dist)
-        font_rend = debug_font.render(str(max_dist), False, (255, 255, 255))
-        font_rect = font_rend.get_rect(topleft=(128, 64))
-        dest.blit(font_rend, font_rect)
-        pygame.draw.circle(dest, (255, 255, 255), (sprite_x/2, sprite_y/2), 16, 1)
+
+        # pygame.draw.circle(dest, (255, 255, 255), (sprite_x/2, sprite_y/2), 16, 1)

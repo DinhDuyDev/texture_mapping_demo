@@ -8,9 +8,11 @@ def point_direction(x1:float, y1:float, x2:float, y2:float) -> float:
 
 def point_distance(x1:float, y1:float, x2:float, y2:float) -> float:
     return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+
 def square_distance(x1:float, y1:float, x2:float, y2:float) -> float:
     return (x2 - x1) ** 2 + (y2 - y1) ** 2
-def sign(x : float) -> int:#int[-1, 0, 1]:
+
+def sign(x : float) -> int:
     if x == 0:
         return 0
     return int(x / abs(x))
@@ -30,7 +32,7 @@ def dist_to_line(point:tuple[float,float], startLine:tuple[float,float], endLine
     if square_distance(startLine[0], startLine[1], endLine[0], endLine[1]) == 0:
         return point_distance(point[0], point[1], startLine[0], startLine[1])
     numerator = abs((point[0] - startLine[0]) * (-endLine[1] + startLine[1]) + (point[1] - startLine[1]) * (endLine[0] - startLine[0]))
-    denominator = math.sqrt((-endLine[1] + endLine[1]) ** 2 + (endLine[0] - startLine[0]) ** 2)
+    denominator = math.sqrt((-endLine[1] + startLine[1]) ** 2 + (endLine[0] - startLine[0]) ** 2)
     if denominator == 0:
         return 0
     return numerator / denominator
@@ -49,9 +51,9 @@ def clamp_directionals(direction: float):
             direction += 360
     return direction
     
-# I'm so lonely
+    
 def utilityfuncs():
-    print("Thank you for using utility funcs :)")
+    print("Thank you for using utilityfuncs :)")
 
 
 utilityfuncs()
