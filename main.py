@@ -10,13 +10,19 @@ import utilityfuncs
 pygame.init()
 pygame.font.init()
 
-screen = pygame.display.set_mode((640, 360), pygame.RESIZABLE|pygame.DOUBLEBUF|pygame.HWSURFACE|pygame.SRCALPHA, vsync=1)
+screen = pygame.display.set_mode((640, 360), pygame.RESIZABLE|pygame.DOUBLEBUF|pygame.SRCALPHA|pygame.SCALED|pygame.FULLSCREEN, vsync=1)
 draw_dest = screen.copy()
 
 debug_font = pygame.sysfont.SysFont("Arial", 10, False)
 
 clock = pygame.Clock()
 GAME_FPS = 60
+
+gameData = {
+    "MAX_FPS" : -999,
+    "MIN_FPS" : 999,
+    "CUR_FPS" : 0
+}
 
 controller = player.Player(48, 48)
 map_geometry = map.game_map
@@ -50,13 +56,6 @@ def game():
         pygame.draw.rect(draw_dest, (100, 100, 100), (0, 180, 640, 640))
 
         controller.rendering(draw_dest, map_geometry)
-        # player.sprite_y -= 0.001
-        # player.sprite_hitbox.y -= 0.001
-        
-        # # player
-        # pygame.draw.circle(draw_dest, (255, 0, 0), (controller.x/2, controller.y/2), 3)
-        # pygame.draw.line(draw_dest, (255, 255, 0), (controller.x/2, controller.y/2), (controller.x/2 + math.cos(math.radians(controller.direction)) * 16, controller.y/2 - math.sin(math.radians(controller.direction)) * 16))
-        # pygame.draw.circle(draw_dest, (255, 0, 0), (player.sprite_x/2, player.sprite_y/2), 3)
 
         
         fps_counter = debug_font.render(str(clock.get_fps()), False, (255, 0, 0), (0, 255, 0))

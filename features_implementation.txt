@@ -1,0 +1,98 @@
+Features to implement:
+1. Hardware acceleration (3/2/2026):
+    - Generally achieved by importing pygame.sdl2 and its Renderer, Texture and Window.
+    - from pygame._sdl2 import Renderer, Texture, Window
+    - Follow this stackoverflow thread: https://stackoverflow.com/questions/76649546/how-do-i-optimize-scaling-images-in-pygame
+
+EXAMPLE CODE:
+#####################################################################################################################
+from time import perf_counter as get_ticks
+
+# It's a cat!
+IMG = '/9j/4AAQSkZJRgABAQEAYABgAAD/4QCyRXhpZgAATU0AKgAAAAgABQEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAAExAAIAAAAQAAAAWodpAAQAAAABAAAAagAAAAAAAABgAAAAAQAAAGAAAAABcGFpbnQubmV0IDUuMC42AAADkAAABwAAAAQwMjIwoAEAAwAAAAEAAQAAoAUABAAAAAEAAACUAAAAAAABAAIABwAAAAQwMTAwAAAAAAAAAAD/2wBDAIVcZHVkU4V1bHWWjoWeyP/ZyLe3yP////L/////////////////////////////////////////////////////2wBDAY6WlsivyP/Z2f//////////////////////////////////////////////////////////////////////////wAARCAD3APcDARIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwCOipAKKACigQUUAFFABRQAUUAFFAC0UAFFACigUAOxS0ANpaAGmhqAG0tAwFKKAFApwpAJTsUANpaAGmlNMBtLTABQKQBS0AJRQAhpaAG0tMBKKAEooAKKAHCgUgFooEMo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'
+
+def main():
+    pygame.init()
+
+    # We need a Window object and a Renderer
+    window = Window("SDL2", size=(640, 480))
+    renderer = Renderer(window)
+
+    font = pygame.font.SysFont('Arial', 32)
+
+    fps = 0
+    fps_timestamp = get_ticks()
+    fps_t = Texture.from_surface(renderer, font.render('XXX', True, 'white'))
+    
+    # Just a pygame Surface...
+    tmp_image = pygame.image.load(io.BytesIO(base64.b64decode(IMG)))
+
+    # ...converted into a Texure
+    tex = Texture.from_surface(renderer, tmp_image)
+    
+    # Just some variables to let the image move around
+    scale = 1
+    scale_d = 0.0005
+    rotation = 0
+    
+    # target = True allows us to render all stuff into this Texture before rendering it to the window
+    buffer = Texture(renderer, (640, 480), target=True)
+    
+    # keep track of the zoom level
+    zoom = 1
+    
+    while True:
+        events = pygame.event.get()
+        for e in events:
+            if e.type == pygame.QUIT or e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE: 
+                return
+            if e.type == pygame.MOUSEWHEEL:
+                if e.y > 0:
+                    zoom += 0.1
+                else:
+                    zoom -= 0.1
+        
+        # Count the FPS             
+        fps += 1
+        if get_ticks() - fps_timestamp > 1:
+            fps_timestamp = get_ticks()
+            fps_t = Texture.from_surface(renderer, font.render(str(fps) + ' FPS', True, 'white'))
+            fps = 0
+
+        # start rendering onto the buffer texture
+        # everything we do now with the renderer happens on that texture
+        renderer.target = buffer
+
+        # clear the buffer Texture
+        renderer.draw_color = (10, 70, 90, 255)
+        renderer.fill_rect(pygame.Rect(0, 0, 640, 480))
+        
+        scale += scale_d
+        if scale >= 2 or scale <= 0.5: scale_d *= -1
+        rotation += 0.02
+        
+        # note how we can set the size and angle of the Texture
+        tex.draw(dstrect=(50, 50, 247*scale, 247*scale), angle=rotation)
+        
+        # start rendering on the screen
+        # by setting target to None, everything happens now on the screen
+        renderer.target = None
+
+        # clear the screen
+        renderer.draw_color = (0, 0, 90, 255)
+        renderer.fill_rect(pygame.Rect(0, 0, 640, 480))
+
+        # draw the buffer Texure on the screen
+        buffer.draw(dstrect=((640-640*zoom)/2, (480-480*zoom)/2, 640*zoom, 480*zoom))
+
+        # print some stuff
+        zoom_t = Texture.from_surface(renderer, font.render(f'Zoom: {zoom:10.2f}', True, 'white'))
+        zoom_t.draw(dstrect=(520, 450, 100, 30))
+        fps_t.draw(dstrect=(10, 10, 75, 25))
+        
+        # update the window, like pygame.display.flip() does
+        renderer.present()
+
+main()
+########################################################################################################
+HWSURFACE is obsolete by this time.
