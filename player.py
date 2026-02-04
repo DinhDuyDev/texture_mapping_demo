@@ -5,6 +5,7 @@ import utilityfuncs
 import textures
 import screen_elements
 import actors
+import random
 
 EXTREME_RES = 1280 # benchmarking
 MAX_RES = 640
@@ -12,6 +13,7 @@ DEFAULT_RES = 160
 BETTER_RES = 320
 MIN_RES = 80
 RAYCAST_SIZE_SCALE = 320 # 360
+MAX_SPRITE_SCALE = 720
 
 
 # 16x16 resize
@@ -22,10 +24,10 @@ mobster_sprite = textures.mobster_texture
 # sprite_direction = 0
 
 all_sprites:list[actors.WorldSprite] = [
-    actors.WorldSprite(8 * settings.cell_width, 4 * settings.cell_width, 32, 32, mobster_sprite),
-    actors.WorldSprite(14 * settings.cell_width, 1.5 * settings.cell_width, 32, 32, mobster_sprite),
-    # actors.WorldSprite(8 * settings.cell_width, 3 * settings.cell_width, 32, 32),
-    # actors.WorldSprite(8 * settings.cell_width, 3 * settings.cell_width, 32, 32)
+    actors.WorldSprite(8 * settings.cell_width, 4 * settings.cell_width, 32, 32, textures.gore_head_texture) for i in range(20)#,
+    # actors.WorldSprite(14 * settings.cell_width, 1.5 * settings.cell_width, 32, 32, mobster_sprite),
+    # actors.WorldSprite(1.5 * settings.cell_width, 1.5 * settings.cell_width, 32, 32, mobster_sprite),
+    # actors.WorldSprite(12 * settings.cell_width, 11.5 * settings.cell_width, 32, 32, mobster_sprite)
 ]
 # upds
 
@@ -36,16 +38,11 @@ class Player:
     def __init__(self, x: int, y: int):
         self.x:int = x
         self.y:int = y
-        self.resolution = MAX_RES
+        self.resolution = BETTER_RES#MAX_RES
         self.direction = 0
         self.offset = 0
     
     def movement(self, map:list[list[int]]):
-        direction_to_me = utilityfuncs.point_direction(all_sprites[0].x, all_sprites[0].y, self.x, self.y)
-        all_sprites[0].x += math.cos(math.radians(math.radians(direction_to_me))) #* 4
-        all_sprites[0].y -= math.sin(math.radians(math.radians(direction_to_me))) #* 4
-        all_sprites[0].update()
-
         movement_vector = (pygame.key.get_pressed()[pygame.K_w] - pygame.key.get_pressed()[pygame.K_s]) * 2
         front_vec_x = self.x + math.cos(math.radians(self.direction)) * movement_vector * 8
         front_vec_y = self.y - math.sin(math.radians(self.direction)) * movement_vector * 8
@@ -151,58 +148,15 @@ class Player:
                 texture_surface = s_texture_sub[int(percentage_of_cube * s_texture.width)]
                 height = min(1280, height)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
-                # texture_rect = pygame.Rect(i * column_width, h/2-height/2, column_width, height)
                 screen_elements_list.append(screen_elements.ScreenElement(i * column_width, h/2-height/2, dist, height, texture_surface))
-                # dest.blit(texture_surface, texture_rect)
                 
             else:
                 percentage_of_cube = (hitY - (int(hitY/settings.cell_width) * settings.cell_width)) / settings.cell_width
                 texture_surface = s_texture_sub[int(percentage_of_cube * s_texture.width)]
                 height = min(1280, height)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
-                # texture_rect = pygame.Rect(i * column_width, h/2-height/2, column_width, height)
                 screen_elements_list.append(screen_elements.ScreenElement(i * column_width, h/2-height/2, dist, height, texture_surface))
-                
-                # dest.blit(texture_surface, texture_rect)
 
-            # if abs(__d - self.direction + fov/2) < 2 or abs(__d - self.direction - fov/2) < 2:
-            #     pygame.draw.line(dest, (255, 0, 255), (self.x/2, self.y/2), (hitX/2, hitY/2))
-
-            # This is accurate, but too slow. I thought this was good, but it's not good enough.
-            # for asdf in range(10):
-            # is_in_fov = abs(utilityfuncs.point_direction(self.x, self.y, sprite_x, sprite_y) - self.direction) < fov/2 + 20
-            # line_clipped = sprite_hitbox.clipline(self.x, self.y, hitX, hitY)
-            # sprite_bound_distance = abs(utilityfuncs.dist_to_line((sprite_x, sprite_y), (self.x, self.y), (hitX, hitY)))
-            # if sprite_bound_distance < 16 and line_clipped: #and is_in_fov:
-            #     # angle left / right ==> +90 is the left side
-            #     angle_side = utilityfuncs.side_of_line((self.x, self.y), (hitX, hitY), (sprite_x, sprite_y))#utilityfuncs.sign(utilityfuncs.point_direction(self.x, self.y, hitX, hitY) - direction_to_sprite)
-            #     left_x = sprite_x + math.cos(math.radians(self.direction + 90)) * 16
-            #     left_y = sprite_y - math.sin(math.radians(self.direction + 90)) * 16
-            #     right_x = sprite_x + math.cos(math.radians(self.direction - 90)) * 16
-            #     right_y = sprite_y - math.sin(math.radians(self.direction - 90)) * 16
-            #     contact_x = sprite_x + math.cos(math.radians(self.direction + 90 * angle_side)) * sprite_bound_distance
-            #     contact_y = sprite_y - math.sin(math.radians(self.direction + 90 * angle_side)) * sprite_bound_distance
-            #     distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, sprite_x, sprite_y)
-            #     distance_from_left = utilityfuncs.point_distance(contact_x, contact_y, left_x, left_y)
-            #     distance_ratio = (distance_from_left / 32) * mobster_sprite.width
-            #     subsurface_to_be_drawn = mobster_sprite_subsurface[int(distance_ratio)]
-            #     elements_found.append(("sprite", (sprite_x, sprite_y), distance_to_sprite, subsurface_to_be_drawn))
-
-            # for element in elements_found:
-            #     dist = element[2]
-            #     subsurf = element[3]
-            #     height_of_element = min(720, (RAYCAST_SIZE_SCALE / (dist/height_scale)) / offset_ratio)
-            #     scaled_surf = pygame.transform.scale(subsurf, (column_width, height_of_element))
-            #     scaled_rect = scaled_surf.get_rect(topleft=(i * column_width, h/2 - height_of_element/2))
-            #     dest.blit(scaled_surf, scaled_rect)
-
-            # Better system required:
-            #   - Calculate sprite position.
-            #   - Check grid-by-grid, only render if sprite is in a grid that has passed checking.
-            #   - Scale the sprite, and find out if any part of the sprite overlaps with that of wall. If distance to the wall is greater than to the sprite,
-            #   - Create some sort of overworld sprite object => add grids to the game. Check each sprites' position.
-            #   - Do system design to facilitate multiple sprites at once.
-            # then render the sprite.
             __d -= fov/self.resolution
 
         # Sprite rendering
@@ -213,15 +167,15 @@ class Player:
             left_direction = utilityfuncs.clamp_directionals(self.direction + (fov/2))
             delta_dir = utilityfuncs.clamp_directionals(left_direction - direction_to_sprite) / (fov)
             sprite_x_onscreen = delta_dir * w
-            distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, sprite_x, sprite_y)
+            distance_to_sprite = utilityfuncs.point_distance(self.x, self.y, sprite_x, sprite_y) + 0.1
             sprite_height = (RAYCAST_SIZE_SCALE / (distance_to_sprite/height_scale))
-            sprite_height = min(sprite_height, 1280)
+            sprite_height = min(sprite_height, MAX_SPRITE_SCALE)
             screen_elements_list.append(screen_elements.ScreenElement(sprite_x_onscreen, h/2-sprite_height/2, distance_to_sprite, sprite_height, sprite.get_texture(), True, center_sprite=True))
 
-            screen_elements_list.sort(reverse=True)
-            for scr_element in screen_elements_list:
-                render_data = scr_element.surface_and_rect()
-                dest.blit(render_data[0], render_data[1])
+        screen_elements_list.sort(reverse=True)
+        for scr_element in screen_elements_list:
+            render_data = scr_element.surface_and_rect()
+            dest.blit(render_data[0], render_data[1])
 
         # for i in range(self.resolution):
         #     wall_information = wall_data[i]
