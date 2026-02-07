@@ -1,3 +1,5 @@
+SCREEN_WIDTH  = 640
+SCREEN_HEIGHT = 360
 cell_width = 32
 
 def translate_coords(loc:tuple[float,float]) -> tuple[float, float]:

@@ -25,6 +25,8 @@ class ScreenElement:
         if self.center:
             rect.center = (self.x, self.y + self.height/2)
         return (self.surface_to_render, rect)
+    
+    # def add_to_surf(self) -> tuple[pygame.Surface, pygame.Rect]:
 
     def __lt__(self, other:ScreenElement):
         if not isinstance(other, ScreenElement):

@@ -1,4 +1,4 @@
-# Actors
+# Actors (sprites, enemies, effects, etc...)
 import pygame
 import textures
 

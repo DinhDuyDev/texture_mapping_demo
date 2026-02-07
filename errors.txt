@@ -1,5 +1,1 @@
-1. Touching a wall too close would cause pygame.error: Size too large for scaling
-2. Viewing the sprite from a 90 degree angle to it would cause the sprite to compress.
-3. Viewing the sprite from a certain angle causes strips of it to appear somewhere else. 
-4. Right now, ray viewed from close to wall is too large. Try making the hitbox pixel perfect so that the view distortion effect doesn't happen:
-    Maximum amount it can take: 125319.09977589875
+NO ENTRIES

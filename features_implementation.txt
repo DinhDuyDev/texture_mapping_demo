@@ -1,5 +1,13 @@
+KEYWORDS:
+1. TBC: To be considered.
+2. NCA: Not considered anymore.
+
 Features to implement:
-1. Hardware acceleration (3/2/2026):
+1. https://www.youtube.com/watch?v=4gqPv7A_YRY&t=110s - Use numpy for improved speed.
+2. Floorcasting
+
+
+TBC. Hardware acceleration (3/2/2026):
     - Generally achieved by importing pygame.sdl2 and its Renderer, Texture and Window.
     - from pygame._sdl2 import Renderer, Texture, Window
     - Follow this stackoverflow thread: https://stackoverflow.com/questions/76649546/how-do-i-optimize-scaling-images-in-pygame
