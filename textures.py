@@ -18,10 +18,10 @@ gore_head_texture = pygame.image.load("sprites/romero_head.png").convert()
 mobster_texture = pygame.image.load("sprites/mobster.png").convert_alpha()
 mobster_texture_subsurfaces = [ mobster_texture.subsurface(i, 0, 1, mobster_texture.height) for i in range(mobster_texture.width) ]
 
-quick_access_texture = [
-    (brick_texture, brick_texture_subsurfaces),
-    (fun_texture, fun_texture_subsurfaces),
-    (stone_texture, stone_texture_subsurfaces),
-    (dirty_brick_texture, dirty_brick_texture_subsurfaces),
-]
+quick_access_texture = {
+    1: (brick_texture, brick_texture_subsurfaces),
+    2: (fun_texture, fun_texture_subsurfaces),
+    3: (stone_texture, stone_texture_subsurfaces),
+    4: (dirty_brick_texture, dirty_brick_texture_subsurfaces),
+}
 pygame.display.quit()

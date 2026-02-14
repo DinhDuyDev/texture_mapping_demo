@@ -1,0 +1,9 @@
+Feb 12: System design:
+    + Enemies.
+        + Different types of enemies with completely unique gameplay styles.
+    + Weapons.
+        + Different types of weapons.
+    + Pickups.
+        + Ammo pickups, health pickups...
+    + UI (Health, Ammo separation...)
+    GOAL: Make a great shooter. Not just an average one.
