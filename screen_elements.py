@@ -1,4 +1,5 @@
 import pygame
+pygame.font.init()
 
 class ScreenElement:
     def __init__(self, x_pos : float # horizontal position on screen

@@ -15,7 +15,6 @@ DEFAULT_RES = 160
 BETTER_RES = 320
 MIN_RES = 80
 
-
 # 16x16 resize
 mobster_sprite = textures.mobster_texture
 
@@ -48,14 +47,9 @@ class Player:
         self.hsp = pygame.math.lerp(self.hsp, math.cos(math.radians(self.direction)) * forward_movement + math.cos(math.radians(self.direction+90)) * sidestep_movement, 0.5)
         self.vsp = pygame.math.lerp(self.vsp, math.sin(math.radians(self.direction)) * forward_movement + math.sin(math.radians(self.direction+90)) * sidestep_movement, 0.5)
         
-        wishX = self.x + self.hsp * 8
-        wishY = self.y - self.hsp * 8
-
-        conv_x, conv_y = settings.translate_coords((wishX, wishY))
-        
-        # Weird hitscan stuff
+        # Firing projectile
         if pygame.mouse.get_pressed()[0] and self.rof > 3:
-            hitscan(self.x, self.y, 1000, self.direction + random.randrange(-3, 3), 10, maph)
+            FireBall(self.x, self.y, 16, 8, textures.fireball_texture, self.direction + random.randrange(-3, 3), self.z_lookup/10 + random.randrange(-3, 3), 12)
             self.rof = 0
         self.rof += 1
 
@@ -126,32 +120,42 @@ def hitscan(x:float, y:float, range: int, direction:float, damage:int, maph:list
         else:
             y -= movement_vector_y
     
-    FireBall(x, y, 12, textures.fireball_texture, direction, 5)
+    FireBall(x, y, 16, 12, textures.fireball_texture, direction, 5)
 
 
 class Actor:
     all_enemies:list[BaseEnemy] = []
     all_projectiles:list[FireBall] = []
-    def __init__(self, x, y, width, texture:pygame.Surface):
+    def __init__(self, x, y, z, width, texture:pygame.Surface, scale_size=1):
         self.x = x
         self.y = y
+        self.z = z
         self.width = width
         self.hitbox = pygame.Rect(self.x - self.width/2, self.y - self.width/2, self.width, self.width)
-        self.world_sprite = worldsprite.WorldSprite(self.x, self.y, self.width, self.width, texture, 0.2)
+        self.world_sprite = worldsprite.WorldSprite(self.x, self.y, self.z, self.width, self.width, texture, scale_size)
+        self.current_actor_block: ActorBlock = actor_blockmap[int(self.y / settings.cell_width)][int(self.x / settings.cell_width)]
 
     def update(self):
         self.hitbox.center = (self.x, self.y)
         self.world_sprite.x = self.x
         self.world_sprite.y = self.y
+        self.world_sprite.z = self.z
         self.world_sprite.update()
+
+        # changing actor blocks and removing itself from any blocks not currently in
+        if actor_blockmap[int(self.y / settings.cell_width)][int(self.x / settings.cell_width)] != self.current_actor_block:
+            self.current_actor_block.contained_actor.discard(self)
+            self.current_actor_block = actor_blockmap[int(self.y / settings.cell_width)][int(self.x / settings.cell_width)]
+        if self not in self.current_actor_block.contained_actor:
+            self.current_actor_block.contained_actor.add(self)
     
     # Must implement destroy themselves
     def destroy(self):
         pass
 
 class BaseEnemy(Actor):
-    def __init__(self, x, y, width):
-        super().__init__(x, y, width, textures.mobster_texture)
+    def __init__(self, x, y, z, width):
+        super().__init__(x, y, z, width, textures.mobster_texture)
         Actor.all_enemies.append(self)
 
     def update(self):
@@ -161,21 +165,40 @@ class BaseEnemy(Actor):
         deleter.Deleter.request_delete(self, Actor.all_enemies)
         self.world_sprite.destroy()
 
+
 class FireBall(Actor):
-    def __init__(self, x, y, width, texture, direction, speed):
-        super().__init__(x, y, width, texture)
+    def __init__(self, x, y, z, width, texture, direction, zdirection, speed):
+        super().__init__(x, y, z, width, texture, 0.1)
         self.direction = direction
+        self.zdirection = zdirection
         self.speed = speed
         Actor.all_projectiles.append(self)
 
+        self.z -= math.sin(math.radians(self.zdirection)) * self.speed
+
     def update(self):
         super().update()
-        self.x += math.cos(math.radians(self.direction)) * self.speed
-        self.y -= math.sin(math.radians(self.direction)) * self.speed
+        self.x += math.cos(math.radians(self.direction)) * self.speed * math.cos(math.radians(self.zdirection))
+        self.y -= math.sin(math.radians(self.direction)) * self.speed * math.cos(math.radians(self.zdirection))
+        self.z -= math.sin(math.radians(self.zdirection)) * self.speed
+
+        self.world_sprite.sprite_scale += 0.01
         cell_x, cell_y = int(self.x / settings.cell_width), int(self.y / settings.cell_width)
-        if worldmap.game_map[cell_y][cell_x] != 0:
+
+
+        if worldmap.game_map[cell_y][cell_x] != 0 or not (self.z > 0 and self.z < 32):
             self.destroy()
     
     def destroy(self):
         deleter.Deleter.request_delete(self, Actor.all_projectiles)
         self.world_sprite.destroy()
+
+
+# blockmaps for collision purposes
+class ActorBlock:
+    def __init__(self):
+        self.contained_actor:set[Actor] = set()
+
+actor_blockmap = [
+    [ActorBlock() for i in range(len(worldmap.game_map[0]))] for j in range(len(worldmap.game_map))
+]

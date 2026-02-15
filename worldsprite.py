@@ -5,9 +5,10 @@ import deleter
 
 class WorldSprite:
     all_sprites:list[WorldSprite] = []
-    def __init__(self, x, y, width, height, texture: pygame.Surface, sprite_scale):
+    def __init__(self, x, y, z, width, height, texture: pygame.Surface, sprite_scale):
         self.x:float = x
         self.y:float = y
+        self.z:float = z
         self.rect: pygame.Rect = pygame.Rect((self.x - width/2, self.y -  height/2, width, height))
         self.rect.center = (self.x, self.y)
         self.texture: pygame.Surface = texture
@@ -17,18 +18,13 @@ class WorldSprite:
 
     def update(self):
         self.rect.center = (self.x, self.y)
-        # changing sprite blocks and removing itself from any blocks not seen
+        # changing sprite blocks and removing itself from any blocks not currently in
         if sprite_blockmap[int(self.y / settings.cell_width)][int(self.x / settings.cell_width)] != self.current_sprite_block:
             self.current_sprite_block.contained_sprites.discard(self)
             self.current_sprite_block = sprite_blockmap[int(self.y / settings.cell_width)][int(self.x / settings.cell_width)]
         if self not in self.current_sprite_block.contained_sprites:
             self.current_sprite_block.contained_sprites.add(self)
-        
-        if pygame.key.get_pressed()[pygame.K_0]:
-            self.destroy()
-        if pygame.key.get_pressed()[pygame.K_q]:
-            self.x += 1
-            self.y += 1
+
 
     def get_texture(self) -> pygame.Surface:
         return self.texture
