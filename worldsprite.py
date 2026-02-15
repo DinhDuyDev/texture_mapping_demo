@@ -1,18 +1,18 @@
 import pygame
-import map
+import worldmap
 import settings
 import deleter
 
 class WorldSprite:
     all_sprites:list[WorldSprite] = []
-    def __init__(self, x, y, width, height, texture: pygame.Surface):
+    def __init__(self, x, y, width, height, texture: pygame.Surface, sprite_scale):
         self.x:float = x
         self.y:float = y
         self.rect: pygame.Rect = pygame.Rect((self.x - width/2, self.y -  height/2, width, height))
         self.rect.center = (self.x, self.y)
         self.texture: pygame.Surface = texture
         self.current_sprite_block:SpriteBlock = sprite_blockmap[int(self.y / settings.cell_width)][int(self.x / settings.cell_width)]
-        self.owner = None
+        self.sprite_scale = sprite_scale
         self.all_sprites.append(self)
 
     def update(self):
@@ -43,5 +43,5 @@ class SpriteBlock:
 
 # Sprites blockmap to optimize sprite rendering.
 sprite_blockmap = [
-    [SpriteBlock() for i in range(len(map.game_map[0]))] for j in range(len(map.game_map))
+    [SpriteBlock() for i in range(len(worldmap.game_map[0]))] for j in range(len(worldmap.game_map))
 ]

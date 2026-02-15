@@ -4,6 +4,9 @@ import settings
 import utilityfuncs
 import textures
 import render
+import deleter
+import worldmap
+import worldsprite
 
 EXTREME_RES = 1280 # benchmarking
 MAX_RES = 640
@@ -118,3 +121,55 @@ def hitscan(x:float, y:float, range: int, direction:float, damage:int, maph:list
             range = -1000
         else:
             y -= movement_vector_y
+
+
+class Actor:
+    all_enemies:list[BaseEnemy] = []
+    all_projectiles:list[FireBall] = []
+    def __init__(self, x, y, width, texture:pygame.Surface):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.hitbox = pygame.Rect(self.x - self.width/2, self.y - self.width/2, self.width, self.width)
+        self.world_sprite = worldsprite.WorldSprite(self.x, self.y, self.width, self.width, texture, 0.4)
+
+    def update(self):
+        self.hitbox.center = (self.x, self.y)
+        self.world_sprite.x = self.x
+        self.world_sprite.y = self.y
+        self.world_sprite.update()
+    
+    # Must implement destroy themselves
+    def destroy(self):
+        pass
+
+class BaseEnemy(Actor):
+    def __init__(self, x, y, width):
+        super().__init__(x, y, width, textures.mobster_texture)
+        Actor.all_enemies.append(self)
+
+    def update(self):
+        super().update()
+
+    def destroy(self):
+        deleter.Deleter.request_delete(self, Actor.all_enemies)
+        self.world_sprite.destroy()
+
+class FireBall(Actor):
+    def __init__(self, x, y, width, texture, direction, speed):
+        super().__init__(x, y, width, texture)
+        self.direction = direction
+        self.speed = speed
+        Actor.all_projectiles.append(self)
+
+    def update(self):
+        super().update()
+        self.x += math.cos(math.radians(self.direction)) * self.speed
+        self.y -= math.sin(math.radians(self.direction)) * self.speed
+        cell_x, cell_y = int(self.x / settings.cell_width), int(self.y / settings.cell_width)
+        if worldmap.game_map[cell_y][cell_x] != 0:
+            self.destroy()
+    
+    def destroy(self):
+        deleter.Deleter.request_delete(self, Actor.all_projectiles)
+        # self.world_sprite.destroy()

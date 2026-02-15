@@ -167,7 +167,7 @@ def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:
             distance_to_sprite = utilityfuncs.point_distance(x, y, sprite_x, sprite_y) + 0.1
             sprite_height = (RAYCAST_SIZE_SCALE / (distance_to_sprite/height_scale))
             sprite_height = min(sprite_height, MAX_SPRITE_SCALE)
-            screen_elements_list.append(screen_elements.ScreenElement(sprite_x_onscreen, screen_height/2-sprite_height/2, distance_to_sprite, sprite_height, sprite.get_texture(), True, center_sprite=True))
+            screen_elements_list.append(screen_elements.ScreenElement(sprite_x_onscreen, screen_height/2-(sprite_height/2) * sprite.sprite_scale, distance_to_sprite, sprite_height * sprite.sprite_scale, sprite.get_texture(), True, center_sprite=True, rescale_val=sprite.sprite_scale))
 
         screen_elements_list.sort(reverse=True)
         return floor_elements_list + screen_elements_list

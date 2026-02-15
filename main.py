@@ -1,13 +1,14 @@
 ##### DEMO FOR TEXTURE MAPPING
 import pygame
-import player
-import map
+import actor
+import worldmap
 import psutil
 import settings
 import textures
 import worldsprite
 import deleter
 import render
+import actor
 
 pygame.init()
 pygame.font.init()
@@ -29,13 +30,13 @@ gameData = {
     "DEBUG_MODE" : False
 }
 
-player_obj = player.Player(48, 48)
+player_obj = actor.Player(48, 48)
 
 # All sprites
-worldsprite.WorldSprite(8 * settings.cell_width, 3 * settings.cell_width, 32, 32, textures.mobster_texture),
+worldsprite.WorldSprite(8 * settings.cell_width, 3 * settings.cell_width, 32, 32, textures.mobster_texture, sprite_scale=1)
 
 # Map geometry
-map_geometry = map.game_map
+map_geometry = worldmap.game_map
 
 
 # game
@@ -51,6 +52,8 @@ def game():
                     player_obj.resolution += 5
                 elif event.key == pygame.K_DOWN:
                     player_obj.resolution -= 5
+                elif event.key == pygame.K_RETURN:
+                    actor.FireBall(player_obj.x, player_obj.y, 25, textures.fireball_texture, player_obj.direction, 5)
             elif event.type == pygame.QUIT:
                 running = False
         
@@ -61,8 +64,15 @@ def game():
         if gameData["MAX_FPS"] < current_fps:
             gameData["MAX_FPS"] = current_fps
 
-        # Logic
+        # Player movement
         player_obj.movement(map_geometry)
+
+        # Game logic - Actors and NPCs
+        for at in actor.Actor.all_enemies:
+            at.update()
+
+        for at in actor.Actor.all_projectiles:
+            at.update()
 
         # Display
         draw_dest.fill((0, 0, 0))

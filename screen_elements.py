@@ -8,6 +8,7 @@ class ScreenElement:
                  , surface_to_render : pygame.Surface # what surface to render
                  , explicit_scaling = False
                  , center_sprite = False
+                 , rescale_val = 1
                  ):
         self.x = x_pos
         self.y = y_pos
@@ -16,14 +17,14 @@ class ScreenElement:
         self.height_ratio = self.height / surface_to_render.height
         self.width = surface_to_render.width * self.height_ratio if explicit_scaling else surface_to_render.width
         self.center = center_sprite
-        self.surface_to_render: pygame.Surface = pygame.transform.scale(surface_to_render, (self.width, self.height))
-
+        self.surface_to_render: pygame.Surface = pygame.transform.scale_by(pygame.transform.scale(surface_to_render, (self.width, self.height)), rescale_val)
+        self.rescale_val = rescale_val
     
     def surface_and_rect(self) -> tuple[pygame.Surface, pygame.Rect]:
         # Rect scaling
         rect = pygame.Rect(self.x, self.y, self.width, self.height)
         if self.center:
-            rect.center = (self.x, self.y + self.height/2)
+            rect.center = (self.x + self.width * (1-self.rescale_val), self.y + self.height/2)
         return (self.surface_to_render, rect)
     
     # def add_to_surf(self) -> tuple[pygame.Surface, pygame.Rect]:
