@@ -23,7 +23,7 @@ class Player:
     def __init__(self, x: int, y: int):
         self.x:int = x
         self.y:int = y
-
+        self.z_proj:int = 16
         self.hsp = 0
         self.vsp = 0
         self.cam_x = self.x
@@ -32,12 +32,14 @@ class Player:
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
-        self.z_lookup_limit = 128
-
+        self.z_lookup_limit = 256#128
         self.rof = 0
 
         self.hitbox_width = 18
         self.hitbox = pygame.Rect(self.x - self.hitbox_width/2, self.y - self.hitbox_width/2, self.hitbox_width, self.hitbox_width)
+
+        self.bob_count = 0
+        self.bob_magnitude = 0
     
     def movement(self, maph:list[list[int]]):
 
@@ -48,8 +50,10 @@ class Player:
         self.vsp = pygame.math.lerp(self.vsp, math.sin(math.radians(self.direction)) * forward_movement + math.sin(math.radians(self.direction+90)) * sidestep_movement, 0.5)
         
         # Firing projectile
-        if pygame.mouse.get_pressed()[0] and self.rof > 3:
-            FireBall(self.x, self.y, 16, 8, textures.fireball_texture, self.direction + random.randrange(-3, 3), self.z_lookup/10 + random.randrange(-3, 3), 12)
+        if pygame.mouse.get_pressed()[0] and self.rof > 15:
+            for i in range(7):
+                # FireBall(self.x + self.hsp, self.y - self.vsp, 16, 8, textures.fireball_texture, self.direction + random.randrange(-3, 3), self.z_lookup/8 + random.randrange(-3, 3), 5)
+                hitscan(self.x, self.y, 16, 1000, self.direction + random.randrange(-3, 3), self.z_lookup/9 + random.randrange(-3, 3), 10, maph)
             self.rof = 0
         self.rof += 1
 
@@ -103,24 +107,33 @@ class Player:
 
 
 
-def hitscan(x:float, y:float, range: int, direction:float, damage:int, maph:list[list[int]]):
-    movement_vector_x = math.cos(math.radians(direction)) * 4
-    movement_vector_y = math.sin(math.radians(direction)) * 4
+def hitscan(x:float, y:float, z:float, _range: int, direction:float, zdirection:float, damage:int, maph:list[list[int]]):
+    movement_vector_x = math.cos(math.radians(direction)) * 4 * math.cos(math.radians(zdirection))
+    movement_vector_y = math.sin(math.radians(direction)) * 4 * math.cos(math.radians(zdirection))
+    movement_vector_z = math.sin(math.radians(zdirection)) * 4
+    z -= movement_vector_z
 
-    while range > 0:
+    while _range > 0:
         ix, iy = int(x / settings.cell_width), int(y / settings.cell_width)
         vix, viy = int((x + movement_vector_x * 4) / settings.cell_width), int((y - movement_vector_y * 4) / settings.cell_width)
         
         if maph[viy][ix]:
-            range = -1000
+            _range = -1000
         else:
             x += movement_vector_x
         if maph[iy][vix]:
-            range = -1000
+            _range = -1000
         else:
             y -= movement_vector_y
+
+        if not (z >= 0 and z <= 32):
+            _range = -1000
+        else:
+            z -= movement_vector_z
+        
+        _range -= 1
     
-    FireBall(x, y, 16, 12, textures.fireball_texture, direction, 5)
+    FireBall(x, y, z, 12, textures.fireball_texture, direction, zdirection, 5)
 
 
 class Actor:
@@ -176,16 +189,16 @@ class FireBall(Actor):
 
         self.z -= math.sin(math.radians(self.zdirection)) * self.speed
 
+        self.is_moving = True
+
     def update(self):
         super().update()
-        self.x += math.cos(math.radians(self.direction)) * self.speed * math.cos(math.radians(self.zdirection))
-        self.y -= math.sin(math.radians(self.direction)) * self.speed * math.cos(math.radians(self.zdirection))
-        self.z -= math.sin(math.radians(self.zdirection)) * self.speed
+        if self.is_moving:
+            self.x += math.cos(math.radians(self.direction)) * self.speed * math.cos(math.radians(self.zdirection))
+            self.y -= math.sin(math.radians(self.direction)) * self.speed * math.cos(math.radians(self.zdirection))
+            self.z -= math.sin(math.radians(self.zdirection)) * self.speed
 
-        self.world_sprite.sprite_scale += 0.01
         cell_x, cell_y = int(self.x / settings.cell_width), int(self.y / settings.cell_width)
-
-
         if worldmap.game_map[cell_y][cell_x] != 0 or not (self.z > 0 and self.z < 32):
             self.destroy()
     
