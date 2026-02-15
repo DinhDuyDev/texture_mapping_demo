@@ -24,7 +24,7 @@ class ScreenElement:
         # Rect scaling
         rect = pygame.Rect(self.x, self.y, self.width, self.height)
         if self.center:
-            rect.center = (self.x + self.width * (1-self.rescale_val), self.y + self.height/2)
+            rect.center = (self.x + self.width * (1-self.rescale_val)/2, self.y  + self.height/2)
         return (self.surface_to_render, rect)
     
     # def add_to_surf(self) -> tuple[pygame.Surface, pygame.Rect]:

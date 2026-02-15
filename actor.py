@@ -7,6 +7,7 @@ import render
 import deleter
 import worldmap
 import worldsprite
+import random
 
 EXTREME_RES = 1280 # benchmarking
 MAX_RES = 640
@@ -34,6 +35,8 @@ class Player:
         self.z_lookup = 0
         self.z_lookup_limit = 128
 
+        self.rof = 0
+
         self.hitbox_width = 18
         self.hitbox = pygame.Rect(self.x - self.hitbox_width/2, self.y - self.hitbox_width/2, self.hitbox_width, self.hitbox_width)
     
@@ -51,9 +54,10 @@ class Player:
         conv_x, conv_y = settings.translate_coords((wishX, wishY))
         
         # Weird hitscan stuff
-        if pygame.key.get_pressed()[pygame.K_e]:
-            for i in range(7):
-                hitscan(self.x, self.y, 1000, self.direction, 10, maph)
+        if pygame.mouse.get_pressed()[0] and self.rof > 3:
+            hitscan(self.x, self.y, 1000, self.direction + random.randrange(-3, 3), 10, maph)
+            self.rof = 0
+        self.rof += 1
 
         # collision and movement
         # search for all nearby hitboxes
@@ -121,6 +125,8 @@ def hitscan(x:float, y:float, range: int, direction:float, damage:int, maph:list
             range = -1000
         else:
             y -= movement_vector_y
+    
+    FireBall(x, y, 12, textures.fireball_texture, direction, 5)
 
 
 class Actor:
@@ -131,7 +137,7 @@ class Actor:
         self.y = y
         self.width = width
         self.hitbox = pygame.Rect(self.x - self.width/2, self.y - self.width/2, self.width, self.width)
-        self.world_sprite = worldsprite.WorldSprite(self.x, self.y, self.width, self.width, texture, 0.4)
+        self.world_sprite = worldsprite.WorldSprite(self.x, self.y, self.width, self.width, texture, 0.2)
 
     def update(self):
         self.hitbox.center = (self.x, self.y)
@@ -172,4 +178,4 @@ class FireBall(Actor):
     
     def destroy(self):
         deleter.Deleter.request_delete(self, Actor.all_projectiles)
-        # self.world_sprite.destroy()
+        self.world_sprite.destroy()

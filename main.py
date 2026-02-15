@@ -27,7 +27,7 @@ gameData = {
     "MAX_FPS" : -999,
     "MIN_FPS" : 999,
     "CUR_FPS" : 0,
-    "DEBUG_MODE" : False
+    "DEBUG_MODE" : True
 }
 
 player_obj = actor.Player(48, 48)
@@ -52,8 +52,6 @@ def game():
                     player_obj.resolution += 5
                 elif event.key == pygame.K_DOWN:
                     player_obj.resolution -= 5
-                elif event.key == pygame.K_RETURN:
-                    actor.FireBall(player_obj.x, player_obj.y, 25, textures.fireball_texture, player_obj.direction, 5)
             elif event.type == pygame.QUIT:
                 running = False
         

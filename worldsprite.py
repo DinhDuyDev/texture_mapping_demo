@@ -44,4 +44,4 @@ class SpriteBlock:
 # Sprites blockmap to optimize sprite rendering.
 sprite_blockmap = [
     [SpriteBlock() for i in range(len(worldmap.game_map[0]))] for j in range(len(worldmap.game_map))
-]
+] 
