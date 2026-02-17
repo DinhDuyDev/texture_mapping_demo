@@ -33,11 +33,11 @@ gameData = {
 player_obj = actor.Player(48, 48)
 
 # All sprites
-# worldsprite.WorldSprite(8 * settings.cell_width, 3 * settings.cell_width, 32, 32, textures.mobster_texture, sprite_scale=1)
+worldsprite.WorldSprite(8 * settings.cell_width, 3 * settings.cell_width, 16, 32, 32, textures.mobster_texture, sprite_scale=1)
 
 # Map geometry
 map_geometry = worldmap.game_map
-
+worldsprite.WorldSprite(160, 160, 16, 12, 12, textures.lamp_texture, 1)
 
 # game
 def game():

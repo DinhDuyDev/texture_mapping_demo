@@ -1,5 +1,10 @@
-import settings
-import utilityfuncs
+class Door:
+    def __init__(self, x: int, y: int, map_to_modify: list[list[int]]):
+        self.x:int = x
+        self.y:int = y
+        self.map_to_modify:list[list[int]] = map_to_modify
+        self.y_offset = 0
+
 class PushWall:
     def __init__(self, x: int, y: int, map_to_modify: list[list[int]]):
         self.x:int = x

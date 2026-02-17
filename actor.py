@@ -7,7 +7,7 @@ import render
 import deleter
 import worldmap
 import worldsprite
-import random
+from random import randrange
 
 EXTREME_RES = 1280 # benchmarking
 MAX_RES = 640
@@ -23,16 +23,16 @@ class Player:
     def __init__(self, x: int, y: int):
         self.x:int = x
         self.y:int = y
-        self.z_proj:int = 16
         self.hsp = 0
         self.vsp = 0
+        self.movespeed = 1.5
         self.cam_x = self.x
         self.cam_y = self.y
         self.resolution = MAX_RES
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
-        self.z_lookup_limit = 256#128
+        self.z_lookup_limit = 256
         self.rof = 0
 
         self.hitbox_width = 18
@@ -43,17 +43,16 @@ class Player:
     
     def movement(self, maph:list[list[int]]):
 
-        forward_movement = (pygame.key.get_pressed()[pygame.K_w] - pygame.key.get_pressed()[pygame.K_s])
-        sidestep_movement = (pygame.key.get_pressed()[pygame.K_a] - pygame.key.get_pressed()[pygame.K_d])
+        forward_movement = (pygame.key.get_pressed()[pygame.K_w] - pygame.key.get_pressed()[pygame.K_s]) * self.movespeed
+        sidestep_movement = (pygame.key.get_pressed()[pygame.K_a] - pygame.key.get_pressed()[pygame.K_d]) * self.movespeed
 
-        self.hsp = pygame.math.lerp(self.hsp, math.cos(math.radians(self.direction)) * forward_movement + math.cos(math.radians(self.direction+90)) * sidestep_movement, 0.5)
-        self.vsp = pygame.math.lerp(self.vsp, math.sin(math.radians(self.direction)) * forward_movement + math.sin(math.radians(self.direction+90)) * sidestep_movement, 0.5)
+        self.hsp = pygame.math.lerp(self.hsp, math.cos(math.radians(self.direction)) * forward_movement + math.cos(math.radians(self.direction+90)) * sidestep_movement, 0.2)
+        self.vsp = pygame.math.lerp(self.vsp, math.sin(math.radians(self.direction)) * forward_movement + math.sin(math.radians(self.direction+90)) * sidestep_movement, 0.2)
         
         # Firing projectile
         if pygame.mouse.get_pressed()[0] and self.rof > 15:
             for i in range(7):
-                # FireBall(self.x + self.hsp, self.y - self.vsp, 16, 8, textures.fireball_texture, self.direction + random.randrange(-3, 3), self.z_lookup/8 + random.randrange(-3, 3), 5)
-                hitscan(self.x, self.y, 16, 1000, self.direction + random.randrange(-3, 3), self.z_lookup/9 + random.randrange(-3, 3), 10, maph)
+                hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/9 + randrange(-3, 3), 10, maph)
             self.rof = 0
         self.rof += 1
 
@@ -66,7 +65,7 @@ class Player:
                 if maph[cell_y+j][cell_x+i] != 0:
                     all_surrounding_hitboxes.append(pygame.Rect((cell_x + i) * settings.cell_width, (cell_y + j) * settings.cell_width, settings.cell_width, settings.cell_width))
         
-        # collision
+        # Collision and movement
         for hitbox in all_surrounding_hitboxes:
             # hitbox in the front
             wishX_hitbox = pygame.Rect(self.x - self.hitbox_width/2 + self.hsp, self.y - self.hitbox_width/2, self.hitbox_width, self.hitbox_width)
@@ -75,10 +74,18 @@ class Player:
                 self.hsp = 0
             if wishY_hitbox.colliderect(hitbox):
                 self.vsp = 0
-        
-        
+
         self.x += self.hsp
         self.y -= self.vsp
+        
+        # Head bob
+        if abs(self.hsp + self.vsp) > 0.01:
+            self.bob_count += 0.3
+            if self.bob_count >= 360:
+                self.bob_count = 0
+            self.bob_magnitude = math.sin(self.bob_count/2) * 0.5
+        else:
+            self.bob_magnitude = pygame.math.lerp(self.bob_magnitude, 0, 0.1)
 
         # using mouse rotate direction
         self.direction -= (pygame.mouse.get_pos()[0] - settings.SCREEN_WIDTH/2) * 0.1
@@ -99,7 +106,7 @@ class Player:
 
     def rendering(self, dest: pygame.Surface, maph:list[list[int]]):
         w, h = dest.get_width(), dest.get_height()
-        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.direction, 90, maph)
+        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude, self.direction, 90, maph)
         for scr_element in all_screen_elements_sorted:
             surf, rect = scr_element.surface_and_rect()
             rect.y -= self.z_lookup
@@ -199,8 +206,8 @@ class FireBall(Actor):
             self.z -= math.sin(math.radians(self.zdirection)) * self.speed
 
         cell_x, cell_y = int(self.x / settings.cell_width), int(self.y / settings.cell_width)
-        if worldmap.game_map[cell_y][cell_x] != 0 or not (self.z > 0 and self.z < 32):
-            self.destroy()
+        # if worldmap.game_map[cell_y][cell_x] != 0 or not (self.z > 0 and self.z < 32):
+        self.destroy()
     
     def destroy(self):
         deleter.Deleter.request_delete(self, Actor.all_projectiles)

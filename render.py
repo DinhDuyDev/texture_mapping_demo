@@ -5,6 +5,12 @@ import utilityfuncs
 import settings
 import textures
 import worldsprite
+from geometry import Door
+from worldmap import game_map
+
+invisible = {0}
+traversable = {0}
+ray_castable = {-1, 0}
 
 
 # Dictionary
@@ -32,14 +38,16 @@ FISHEYE_CORRECTION_LOOKUP_TABLE:dict[float:float] = dict()
 
 light_pos_dict:dict[tuple[int, int], int] = dict()
 
-def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:list[list[int]]) -> list[screen_elements.ScreenElement]:
+oneDoor = Door(10, 1, game_map)
+
+def raycast(screen_width, screen_height, resolution, x, y, z, direction, fov, maph:list[list[int]]) -> list[screen_elements.ScreenElement]:
+        # oneDoor.y_offset -= 0.1
         height_scale = 40
         __d = direction + fov/2
         column_width = round(screen_width/resolution)
         previous_height = 0
 
         screen_elements_list:list[screen_elements.ScreenElement] = []
-        floor_elements_list :list[screen_elements.ScreenElement] = []
 
         all_visible_sprites :set[worldsprite.WorldSprite] = set()
 
@@ -76,22 +84,55 @@ def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:
                 orientation = -1 # 0 -> Horizontal, 1 -> Vertical
                 while True:
                     if horLength < verLength:
+                        # All sprites seen
                         spr_block_atpos = worldsprite.sprite_blockmap[int(Vy/settings.cell_width)][int(Vx/settings.cell_width)]
                         for spr in spr_block_atpos.contained_sprites:
                             all_visible_sprites.add(spr)
-                        if maph[int(Vy/settings.cell_width)][int(Vx/settings.cell_width)] != 0:
+
+                        if maph[int(Vy/settings.cell_width)][int(Vx/settings.cell_width)] not in ray_castable:
                             hitX = Vx
                             hitY = Vy
                             orientation = 0
                             break
+                        
+                        # Trying to draw a door
+                        if int(Vx/settings.cell_width) == oneDoor.x and int(Vy/settings.cell_width) == oneDoor.y:
+                            if 64 + oneDoor.y_offset > Vy:
+                                offset_ratio = math.cos(math.radians(__d - direction))
+                                hitX, hitY = Vx + 16 * dircos, Vy - oneDoor.y_offset
+                                dist = round(utilityfuncs.point_distance(x, y, hitX, hitY)) + 0.1
+                                height = (RAYCAST_SIZE_SCALE / (dist/height_scale)) / offset_ratio
+                                if __d == 0:
+                                    height = previous_height
+                                else:
+                                    previous_height = height
+                                percentage_of_cube = (hitY - (int(hitY/settings.cell_width) * settings.cell_width)) / settings.cell_width
+                                texture_surface = textures.brick_texture_subsurfaces[int(percentage_of_cube * textures.brick_texture.width)]
+                                height = min(1280, height)
+                                
+                                # Darkness
+                                darkness_surface = pygame.Surface((column_width, height))
+                                darkness_surface.fill((0, 0, 0))
+                                darkness_level = MAX_DARKNESS_LEVEL
+                                if (int(hitX/4), int(hitY/4)) in light_points:#[(int(hitX/4), int(hitY/4))]
+                                    if light_points[(int(hitX/4), int(hitY/4))][1] == orientation:
+                                        darkness_level = MAX_DARKNESS_LEVEL - light_points[(int(hitX/4), int(hitY/4))][0]
+                                darkness_surface.set_alpha(darkness_level + 100)
+                                texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
+                                texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
+                                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, screen_height/2-height/2 - (z/16) * height/2, dist, height, texture_surface))
+                            
                         Vx += verStepX
                         Vy -= verStepY
                         horLength = utilityfuncs.square_distance(x, y, Vx, Vy) + 0.01
+                        
                     else:
+                        # All sprites seen
                         spr_block_atpos = worldsprite.sprite_blockmap[int(Hy/settings.cell_width)][int(Hx/settings.cell_width)]
                         for spr in spr_block_atpos.contained_sprites:
                             all_visible_sprites.add(spr)
-                        if maph[int(Hy/settings.cell_width)][int(Hx/settings.cell_width)] != 0:
+
+                        if maph[int(Hy/settings.cell_width)][int(Hx/settings.cell_width)] not in ray_castable:
                             hitX = Hx
                             hitY = Hy
                             orientation = 1
@@ -100,8 +141,7 @@ def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:
                         Hy -= horStepY
                         verLength = utilityfuncs.square_distance(x, y, Hx, Hy) + 0.01
 
-            # pushwalls
-            height_offset = 0
+            # offset ratio (correction)
             offset_ratio = math.cos(math.radians(__d - direction))
 
             # Wall height calculation
@@ -132,8 +172,7 @@ def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:
                 darkness_surface.set_alpha(darkness_level)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
                 texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
-                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, screen_height/2-height/2 - (height_offset/16) * height/2, dist, height, texture_surface))
-                
+                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, screen_height/2-height/2 - (z/16) * height/2, dist, height, texture_surface))
             else:
                 percentage_of_cube = (hitY - (int(hitY/settings.cell_width) * settings.cell_width)) / settings.cell_width
                 texture_surface = s_texture_sub[int(percentage_of_cube * s_texture.width)]
@@ -149,9 +188,9 @@ def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:
                 darkness_surface.set_alpha(darkness_level + 100)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
                 texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
-                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, screen_height/2-height/2 - (height_offset/16) * height/2, dist, height, texture_surface))
+                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, screen_height/2-height/2 - (z/16) * height/2, dist, height, texture_surface))
 
-            __d -= fov/resolution
+            __d -= (fov/resolution)
 
         # Sprite rendering
         # Can do better -> zbuffering
@@ -170,7 +209,7 @@ def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:
             sprite_height = min(sprite_height, MAX_SPRITE_SCALE)
             screen_elements_list.append(screen_elements.ScreenElement(
                 sprite_x_onscreen
-                , screen_height/2-(sprite_height/2) * sprite.sprite_scale - (sprite_z/16) * (sprite_height/2)
+                , screen_height/2-(sprite_height/2) * sprite.sprite_scale - (sprite_z/16) * (sprite_height/2) - (z/16) * (sprite_height/2)
                 , distance_to_sprite
                 , sprite_height
                 , sprite.get_texture()
@@ -180,7 +219,7 @@ def raycast(screen_width, screen_height, resolution, x, y, direction, fov, maph:
                 ))
 
         screen_elements_list.sort(reverse=True)
-        return floor_elements_list + screen_elements_list
+        return screen_elements_list
 
 # Light Source
 # x, y, and orientation
@@ -254,6 +293,7 @@ def add_light_source(x:int, y:int, direction:int, field_dir:int, radius:int, map
 
         direction += 0.01
         field_dir -= 0.01
+
 
 
 class LightSource:
