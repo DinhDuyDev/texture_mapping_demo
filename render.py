@@ -94,7 +94,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                             hitX = Vx
                             hitY = Vy
                             orientation = 0
-                            hitDist = math.sqrt(horLength)#abs(Vy - y) + 0.01
+                            hitDist = math.sqrt(horLength)
                             break
                             
                         Vx += verStepX
@@ -111,7 +111,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                             hitX = Hx
                             hitY = Hy
                             orientation = 1
-                            hitDist = math.sqrt(verLength)#abs(Hx - x) + 0.01
+                            hitDist = math.sqrt(verLength)
                             break
                         Hx += horStepX
                         Hy -= horStepY

@@ -113,6 +113,7 @@ class Player:
 
 
     def rendering(self, dest: pygame.Surface, maph:list[list[int]]):
+        # Added varying heights to walls.
         w, h = dest.get_width(), dest.get_height()
         levels = worldmap.worldheight
         all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight, self.z_lookup, self.direction, 90, maph)
