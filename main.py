@@ -9,6 +9,7 @@ import worldsprite
 import deleter
 import render
 import actor
+import random
 
 pygame.init()
 pygame.font.init()
@@ -33,7 +34,8 @@ gameData = {
 player_obj = actor.Player(48, 48)
 
 # All sprites
-worldsprite.WorldSprite(8 * settings.cell_width, 3 * settings.cell_width, 16, 32, 32, textures.mobster_texture, sprite_scale=1)
+# for i in range(100):
+    # worldsprite.WorldSprite(8 * settings.cell_width + random.randrange(-32, 32), 3 * settings.cell_width + random.randrange(-32, 32), 16, 32, 32, textures.mobster_texture, sprite_scale=0.2)
 
 # Map geometry
 map_geometry = worldmap.game_map

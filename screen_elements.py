@@ -10,6 +10,7 @@ class ScreenElement:
                  , explicit_scaling = False
                  , center_sprite = False
                  , rescale_val = 1
+                 , no_repeats = False
                  ):
         self.x = x_pos
         self.y = y_pos
@@ -20,6 +21,7 @@ class ScreenElement:
         self.center = center_sprite
         self.surface_to_render: pygame.Surface = pygame.transform.scale_by(pygame.transform.scale(surface_to_render, (self.width, self.height)), rescale_val)
         self.rescale_val = rescale_val
+        self.no_repeats = no_repeats
     
     def surface_and_rect(self) -> tuple[pygame.Surface, pygame.Rect]:
         # Rect scaling

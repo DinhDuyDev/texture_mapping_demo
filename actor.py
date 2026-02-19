@@ -23,6 +23,7 @@ class Player:
     def __init__(self, x: int, y: int):
         self.x:int = x
         self.y:int = y
+        self.zheight:int = 0
         self.hsp = 0
         self.vsp = 0
         self.movespeed = 1.5
@@ -52,7 +53,15 @@ class Player:
         # Firing projectile
         if pygame.mouse.get_pressed()[0] and self.rof > 15:
             for i in range(7):
-                hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/9 + randrange(-3, 3), 10, maph)
+                # hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/9 + randrange(-3, 3), 10, maph)
+                FireBall(self.x
+                         , self.y
+                         , self.zheight+16 + self.bob_magnitude, 12
+                         , textures.fireball_texture
+                         , self.direction + randrange(-3, 3)
+                         , self.z_lookup/9 + randrange(-3, 3)
+                         , 5
+                         )
             self.rof = 0
         self.rof += 1
 
@@ -103,14 +112,25 @@ class Player:
         pygame.mouse.set_pos((settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2))
 
 
-
     def rendering(self, dest: pygame.Surface, maph:list[list[int]]):
         w, h = dest.get_width(), dest.get_height()
-        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude, self.direction, 90, maph)
+        levels = worldmap.worldheight
+        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight, self.z_lookup, self.direction, 90, maph)
         for scr_element in all_screen_elements_sorted:
-            surf, rect = scr_element.surface_and_rect()
-            rect.y -= self.z_lookup
-            dest.blit(surf, rect)
+            if scr_element.no_repeats:
+                surf, rect = scr_element.surface_and_rect()
+                rect.y -= self.z_lookup
+                dest.blit(surf, rect)
+            else:
+                if scr_element.y + scr_element.height < 0:
+                    continue
+                surf, rect = scr_element.surface_and_rect()
+                rect.y -= self.z_lookup
+
+                for i in range(levels):
+                    if rect.y + scr_element.height and rect.y < settings.SCREEN_HEIGHT:
+                        dest.blit(surf, rect)
+                    rect.y -= scr_element.height-1
 
 
 
@@ -133,7 +153,7 @@ def hitscan(x:float, y:float, z:float, _range: int, direction:float, zdirection:
         else:
             y -= movement_vector_y
 
-        if not (z >= 0 and z <= 32):
+        if not (z >= 0 and z <= 32 * worldmap.worldheight):
             _range = -1000
         else:
             z -= movement_vector_z
@@ -206,8 +226,8 @@ class FireBall(Actor):
             self.z -= math.sin(math.radians(self.zdirection)) * self.speed
 
         cell_x, cell_y = int(self.x / settings.cell_width), int(self.y / settings.cell_width)
-        # if worldmap.game_map[cell_y][cell_x] != 0 or not (self.z > 0 and self.z < 32):
-        self.destroy()
+        if worldmap.game_map[cell_y][cell_x] != 0 or not (self.z > 0 and self.z < 32 * worldmap.worldheight):
+            self.destroy()
     
     def destroy(self):
         deleter.Deleter.request_delete(self, Actor.all_projectiles)

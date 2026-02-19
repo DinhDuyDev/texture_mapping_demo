@@ -18,3 +18,5 @@ game_map = [
 
 # 0: empty space
 # -1: door
+
+worldheight = 3
