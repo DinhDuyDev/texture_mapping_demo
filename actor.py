@@ -15,6 +15,8 @@ DEFAULT_RES = 160
 BETTER_RES = 320
 MIN_RES = 80
 
+debug_font = pygame.sysfont.SysFont("Arial", 10, False)
+
 # 16x16 resize
 mobster_sprite = textures.mobster_texture
 
@@ -29,12 +31,13 @@ class Player:
         self.movespeed = 1.5
         self.cam_x = self.x
         self.cam_y = self.y
-        self.resolution = MAX_RES
+        self.resolution = BETTER_RES
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
         self.z_lookup_limit = 256
         self.rof = 0
+        self.fov = 30
 
         self.hitbox_width = 18
         self.hitbox = pygame.Rect(self.x - self.hitbox_width/2, self.y - self.hitbox_width/2, self.hitbox_width, self.hitbox_width)
@@ -49,21 +52,6 @@ class Player:
 
         self.hsp = pygame.math.lerp(self.hsp, math.cos(math.radians(self.direction)) * forward_movement + math.cos(math.radians(self.direction+90)) * sidestep_movement, 0.2)
         self.vsp = pygame.math.lerp(self.vsp, math.sin(math.radians(self.direction)) * forward_movement + math.sin(math.radians(self.direction+90)) * sidestep_movement, 0.2)
-        
-        # Firing projectile
-        if pygame.mouse.get_pressed()[0] and self.rof > 15:
-            for i in range(7):
-                # hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/9 + randrange(-3, 3), 10, maph)
-                FireBall(self.x
-                         , self.y
-                         , self.zheight+16 + self.bob_magnitude, 12
-                         , textures.fireball_texture
-                         , self.direction + randrange(-3, 3)
-                         , self.z_lookup/9 + randrange(-3, 3)
-                         , 5
-                         )
-            self.rof = 0
-        self.rof += 1
 
         # collision and movement
         # search for all nearby hitboxes
@@ -86,6 +74,9 @@ class Player:
 
         self.x += self.hsp
         self.y -= self.vsp
+
+        self.fov += pygame.key.get_pressed()[pygame.K_UP] - pygame.key.get_pressed()[pygame.K_DOWN]
+        self.fov = min(179, max(self.fov, 15))
         
         # Head bob
         if abs(self.hsp + self.vsp) > 0.01:
@@ -112,16 +103,45 @@ class Player:
         pygame.mouse.set_pos((settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2))
 
 
+    def firing(self):
+        # Firing projectile
+        if pygame.mouse.get_pressed()[0] and self.rof > 15:
+            for i in range(7):
+                # hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/8 + randrange(-3, 3), 10, maph)
+                FireBall(self.x
+                         , self.y
+                         , self.zheight+16 + self.bob_magnitude, 12
+                         , textures.fireball_texture
+                         , self.direction + randrange(-3, 3)
+                         , self.z_lookup/8 + randrange(-3, 3)
+                         , 15
+                         )
+            self.rof = 0
+        elif pygame.mouse.get_pressed()[2] and self.rof > 2:
+            FireBall(self.x
+                        , self.y
+                        , self.zheight+16 + self.bob_magnitude, 12
+                        , textures.fireball_texture
+                        , self.direction + randrange(-3, 3)
+                        , self.z_lookup/8 + randrange(-3, 3)
+                        , 15
+                        )
+            self.rof = 0
+        self.rof += 1
+
     def rendering(self, dest: pygame.Surface, maph:list[list[int]]):
         # Added varying heights to walls.
         w, h = dest.get_width(), dest.get_height()
         levels = worldmap.worldheight
-        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight, self.z_lookup, self.direction, 90, maph)
+        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight, self.z_lookup, self.direction, self.fov, maph)
+        draw_calls = 0
         for scr_element in all_screen_elements_sorted:
+            # All sprites
             if scr_element.no_repeats:
                 surf, rect = scr_element.surface_and_rect()
                 rect.y -= self.z_lookup
                 dest.blit(surf, rect)
+                draw_calls += 1
             else:
                 if scr_element.y + scr_element.height < 0:
                     continue
@@ -129,9 +149,13 @@ class Player:
                 rect.y -= self.z_lookup
 
                 for i in range(levels):
-                    if rect.y + scr_element.height and rect.y < settings.SCREEN_HEIGHT:
+                    if rect.y + scr_element.height > 0 and rect.y < settings.SCREEN_HEIGHT:
                         dest.blit(surf, rect)
+                        draw_calls += 1
                     rect.y -= scr_element.height-1
+        
+        length_of_strips = debug_font.render(f"FOV: {self.fov}", False, (255, 255, 255))
+        dest.blit(length_of_strips, length_of_strips.get_rect(topleft=(0, 60)))
 
 
 
@@ -215,7 +239,7 @@ class FireBall(Actor):
         self.speed = speed
         Actor.all_projectiles.append(self)
 
-        self.z -= math.sin(math.radians(self.zdirection)) * self.speed
+        # self.z -= math.sin(math.radians(self.zdirection)) * self.speed
 
         self.is_moving = True
 

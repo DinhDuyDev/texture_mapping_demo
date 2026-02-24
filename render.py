@@ -44,6 +44,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
         # oneDoor.y_offset -= 0.1
         height_scale = 40
         __d = direction + fov/2
+
         column_width = round(screen_width/resolution)
         previous_height = 0
 
@@ -94,7 +95,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                             hitX = Vx
                             hitY = Vy
                             orientation = 0
-                            hitDist = math.sqrt(horLength)
+                            hitDist = math.sqrt(horLength) * (fov/90)
                             break
                             
                         Vx += verStepX
@@ -111,7 +112,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                             hitX = Hx
                             hitY = Hy
                             orientation = 1
-                            hitDist = math.sqrt(verLength)
+                            hitDist = math.sqrt(verLength) * (fov/90)
                             break
                         Hx += horStepX
                         Hy -= horStepY
@@ -121,8 +122,10 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
             offset_ratio = math.cos(math.radians(__d - direction))
 
             # Wall height calculation
-            dist = round(utilityfuncs.point_distance(x, y, hitX, hitY)) + 0.1
+            # dist = round(utilityfuncs.point_distance(x, y, hitX, hitY)) + 0.1
             height = ((RAYCAST_SIZE_SCALE / (hitDist/height_scale)) / offset_ratio)
+
+            # A particular bug with __d = 0
             if __d == 0:
                 height = previous_height
             else:
@@ -139,38 +142,38 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                 height = min(1280, height)
 
                 # Darkness
-                # darkness_surface = pygame.Surface((column_width, height))
-                # darkness_surface.fill((0, 0, 0))
-                # darkness_level = MAX_DARKNESS_LEVEL
+                darkness_surface = pygame.Surface((column_width, height))
+                darkness_surface.fill((0, 0, 0))
+                darkness_level = (1-(height/1280) ** 0.8) * 254#MAX_DARKNESS_LEVEL
                 # if (int(hitX/4), int(hitY/4)) in light_points:#[(int(hitX/4), int(hitY/4))]
                 #     if light_points[(int(hitX/4), int(hitY/4))][1] == orientation:
                 #         darkness_level = MAX_DARKNESS_LEVEL - light_points[(int(hitX/4), int(hitY/4))][0]
-                # darkness_surface.set_alpha(darkness_level)
+                darkness_surface.set_alpha(darkness_level)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
-                # texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
+                texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
 
                 # Draw multiple floors at once
                 y_onscreen = screen_height/2-(height/2) - (z/16) * height/2
-                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, y_onscreen, dist, height, texture_surface))
+                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, y_onscreen, hitDist, height, texture_surface))
             else:
                 percentage_of_cube = (hitY - (int(hitY/settings.cell_width) * settings.cell_width)) / settings.cell_width
                 texture_surface = s_texture_sub[int(percentage_of_cube * s_texture.width)]
                 height = min(1280, height)
                 
                 # Darkness
-                # darkness_surface = pygame.Surface((column_width, height))
-                # darkness_surface.fill((0, 0, 0))
-                # darkness_level = MAX_DARKNESS_LEVEL
+                darkness_surface = pygame.Surface((column_width, height))
+                darkness_surface.fill((0, 0, 0))
+                darkness_level = (1-(height/1280) ** 0.8) * 254 #MAX_DARKNESS_LEVEL
                 # if (int(hitX/4), int(hitY/4)) in light_points:#[(int(hitX/4), int(hitY/4))]
                 #     if light_points[(int(hitX/4), int(hitY/4))][1] == orientation:
                 #         darkness_level = MAX_DARKNESS_LEVEL - light_points[(int(hitX/4), int(hitY/4))][0]
-                # darkness_surface.set_alpha(darkness_level + 100)
+                darkness_surface.set_alpha(darkness_level)
                 texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
-                # texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
+                texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
 
                 # Drawing multiple floors at once
                 y_onscreen = screen_height/2-(height/2) - (z/16) * height/2
-                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, y_onscreen, dist, height, texture_surface))
+                screen_elements_list.append(screen_elements.ScreenElement(i * column_width, y_onscreen, hitDist, height, texture_surface))
 
             __d -= (fov/resolution)
 
@@ -179,19 +182,20 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
         # Basically split up the sprite into different parts.
         # Can "add" a strip to another -> add a function to the strip.
 
+        fov_ratio = fov / 90
         for sprite in all_visible_sprites:
             sprite_x = sprite.x
             sprite_y = sprite.y
             sprite_z = sprite.z - 16
-            direction_to_sprite = utilityfuncs.clamp_directionals(utilityfuncs.point_direction(x, y, sprite_x, sprite_y)) #utilityfuncs.clamp_directionals(direction - utilityfuncs.point_direction(x, y, sprite_x, sprite_y))
-            distance_to_sprite = utilityfuncs.point_distance(x, y, sprite_x, sprite_y) + 0.1
+            direction_to_sprite = utilityfuncs.clamp_directionals(utilityfuncs.point_direction(x, y, sprite_x, sprite_y))
+            distance_to_sprite = utilityfuncs.point_distance(x, y, sprite_x, sprite_y) * fov_ratio + 0.1
             if distance_to_sprite > 16:
                 left_direction = utilityfuncs.clamp_directionals(direction + (fov/2))
                 delta_dir = utilityfuncs.clamp_directionals(left_direction - direction_to_sprite) / (fov)
                 sprite_x_onscreen = delta_dir * screen_width
                 sprite_height = (RAYCAST_SIZE_SCALE / (distance_to_sprite/height_scale))
                 sprite_height = min(sprite_height, MAX_SPRITE_SCALE)
-                sprite_y_onscreen = screen_height/2-(sprite_height/2) * sprite.sprite_scale - (sprite_z/16) * (sprite_height/2) - (z/16) * (sprite_height/2)
+                sprite_y_onscreen = screen_height/2-(sprite_height/2) * sprite.sprite_scale * fov_ratio - (sprite_z/16) * (sprite_height/2) * fov_ratio - (z/16) * (sprite_height/2) * fov_ratio
 
                 if sprite_y_onscreen + z + sprite_height - z_lookup > 0 and sprite_y_onscreen - z_lookup < settings.SCREEN_HEIGHT:
                     screen_elements_list.append(screen_elements.ScreenElement(
