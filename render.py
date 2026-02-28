@@ -40,19 +40,21 @@ light_pos_dict:dict[tuple[int, int], int] = dict()
 
 oneDoor = Door(10, 1, game_map)
 
-def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, direction, fov, maph:list[list[int]], level_height=3) -> list[screen_elements.ScreenElement]:
-        # oneDoor.y_offset -= 0.1
-        height_scale = 40
-        __d = direction + fov/2
+def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, direction, fov, maph:list[list[int]]) -> list[screen_elements.ScreenElement]:
+        
 
-        column_width = round(screen_width/resolution)
+        height_scale = 40
+
+        column_width = screen_width/resolution
         previous_height = 0
 
         screen_elements_list:list[screen_elements.ScreenElement] = []
-
         all_visible_sprites :set[worldsprite.WorldSprite] = set()
+        
+        i = 0
 
-        for i in range(resolution):
+        for dy in range(int(resolution//2), int(-resolution//2), -1):
+            __d = direction + math.degrees(math.atan2(dy, 50 / (fov / resolution)))
             if __d != 0:
                 dircos, dirsin = -1, -1
                 verStepX, verStepY = -1, -1
@@ -122,7 +124,6 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
             offset_ratio = math.cos(math.radians(__d - direction))
 
             # Wall height calculation
-            # dist = round(utilityfuncs.point_distance(x, y, hitX, hitY)) + 0.1
             height = ((RAYCAST_SIZE_SCALE / (hitDist/height_scale)) / offset_ratio)
 
             # A particular bug with __d = 0
@@ -142,14 +143,14 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                 height = min(1280, height)
 
                 # Darkness
-                darkness_surface = pygame.Surface((column_width, height))
+                darkness_surface = pygame.Surface((column_width+1, height))
                 darkness_surface.fill((0, 0, 0))
                 darkness_level = (1-(height/1280) ** 0.8) * 254#MAX_DARKNESS_LEVEL
-                # if (int(hitX/4), int(hitY/4)) in light_points:#[(int(hitX/4), int(hitY/4))]
-                #     if light_points[(int(hitX/4), int(hitY/4))][1] == orientation:
-                #         darkness_level = MAX_DARKNESS_LEVEL - light_points[(int(hitX/4), int(hitY/4))][0]
+                if (int(hitX/4), int(hitY/4)) in light_points:#[(int(hitX/4), int(hitY/4))]
+                    if light_points[(int(hitX/4), int(hitY/4))][1] == orientation:
+                        darkness_level = MAX_DARKNESS_LEVEL - light_points[(int(hitX/4), int(hitY/4))][0]
                 darkness_surface.set_alpha(darkness_level)
-                texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
+                texture_surface = pygame.transform.scale(texture_surface, (column_width+1, height))
                 texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
 
                 # Draw multiple floors at once
@@ -161,21 +162,21 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                 height = min(1280, height)
                 
                 # Darkness
-                darkness_surface = pygame.Surface((column_width, height))
+                darkness_surface = pygame.Surface((column_width+1, height))
                 darkness_surface.fill((0, 0, 0))
                 darkness_level = (1-(height/1280) ** 0.8) * 254 #MAX_DARKNESS_LEVEL
-                # if (int(hitX/4), int(hitY/4)) in light_points:#[(int(hitX/4), int(hitY/4))]
-                #     if light_points[(int(hitX/4), int(hitY/4))][1] == orientation:
-                #         darkness_level = MAX_DARKNESS_LEVEL - light_points[(int(hitX/4), int(hitY/4))][0]
+                if (int(hitX/4), int(hitY/4)) in light_points:#[(int(hitX/4), int(hitY/4))]
+                    if light_points[(int(hitX/4), int(hitY/4))][1] == orientation:
+                        darkness_level = MAX_DARKNESS_LEVEL - light_points[(int(hitX/4), int(hitY/4))][0]
                 darkness_surface.set_alpha(darkness_level)
-                texture_surface = pygame.transform.scale(texture_surface, (column_width, height))
+                texture_surface = pygame.transform.scale(texture_surface, (column_width+1, height))
                 texture_surface.blit(darkness_surface, darkness_surface.get_rect(topleft=(0,0)))
 
                 # Drawing multiple floors at once
                 y_onscreen = screen_height/2-(height/2) - (z/16) * height/2
                 screen_elements_list.append(screen_elements.ScreenElement(i * column_width, y_onscreen, hitDist, height, texture_surface))
-
-            __d -= (fov/resolution)
+            
+            i += 1
 
         # Sprite rendering
         # Can do better -> zbuffering
@@ -298,4 +299,3 @@ def add_light_source(x:int, y:int, direction:int, field_dir:int, radius:int, map
 #         self.direction = direction
 #         self.field_dir = field_dir
 #         self.radius = radius
-    

@@ -12,8 +12,10 @@ from random import randrange
 EXTREME_RES = 1280 # benchmarking
 MAX_RES = 640
 DEFAULT_RES = 160
+FOV_RES = 180
 BETTER_RES = 320
 MIN_RES = 80
+
 
 debug_font = pygame.sysfont.SysFont("Arial", 10, False)
 
@@ -25,19 +27,21 @@ class Player:
     def __init__(self, x: int, y: int):
         self.x:int = x
         self.y:int = y
+        self.z:int = 0
+        self.z_speed:float = 0
         self.zheight:int = 0
         self.hsp = 0
         self.vsp = 0
         self.movespeed = 1.5
         self.cam_x = self.x
         self.cam_y = self.y
-        self.resolution = BETTER_RES
+        self.resolution = DEFAULT_RES
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
         self.z_lookup_limit = 256
         self.rof = 0
-        self.fov = 30
+        self.fov = 180
 
         self.hitbox_width = 18
         self.hitbox = pygame.Rect(self.x - self.hitbox_width/2, self.y - self.hitbox_width/2, self.hitbox_width, self.hitbox_width)
@@ -75,8 +79,11 @@ class Player:
         self.x += self.hsp
         self.y -= self.vsp
 
+        self.z = max(0, self.z - self.z_speed)
+        self.z_speed = min(self.z_speed + 0.2, 15)
+
         self.fov += pygame.key.get_pressed()[pygame.K_UP] - pygame.key.get_pressed()[pygame.K_DOWN]
-        self.fov = min(179, max(self.fov, 15))
+        self.fov = min(180, max(self.fov, 15))
         
         # Head bob
         if abs(self.hsp + self.vsp) > 0.01:
@@ -92,6 +99,9 @@ class Player:
         self.z_lookup += (pygame.mouse.get_pos()[1] - settings.SCREEN_HEIGHT/2) * 0.75
         self.z_lookup = min(max(-self.z_lookup_limit, self.z_lookup), self.z_lookup_limit)
 
+        if pygame.key.get_pressed()[pygame.K_RETURN]:
+            self.z_lookup = 0
+
         # using keys to rotate direction
         rotate_vector = (pygame.key.get_pressed()[pygame.K_LEFT] - pygame.key.get_pressed()[pygame.K_RIGHT]) * (0.01 + int(pygame.key.get_pressed()[pygame.K_LSHIFT]) + 1.99)
         self.direction += rotate_vector
@@ -105,7 +115,7 @@ class Player:
 
     def firing(self):
         # Firing projectile
-        if pygame.mouse.get_pressed()[0] and self.rof > 15:
+        if pygame.mouse.get_just_pressed()[0] and self.rof > 15:
             for i in range(7):
                 # hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/8 + randrange(-3, 3), 10, maph)
                 FireBall(self.x
@@ -238,8 +248,6 @@ class FireBall(Actor):
         self.zdirection = zdirection
         self.speed = speed
         Actor.all_projectiles.append(self)
-
-        # self.z -= math.sin(math.radians(self.zdirection)) * self.speed
 
         self.is_moving = True
 
