@@ -22,6 +22,7 @@ class ScreenElement:
         self.surface_to_render: pygame.Surface = pygame.transform.scale_by(pygame.transform.scale(surface_to_render, (self.width, self.height)), rescale_val)
         self.rescale_val = rescale_val
         self.no_repeats = no_repeats
+        self.accompanying_decal = None
     
     def surface_and_rect(self) -> tuple[pygame.Surface, pygame.Rect]:
         # Rect scaling
@@ -29,6 +30,12 @@ class ScreenElement:
         if self.center:
             rect.center = (self.x + self.width * (1-self.rescale_val)/2, self.y  + self.height/2)
         return (self.surface_to_render, rect)
+    
+
+    # Accompanying decals are used to reduce sorting calls.
+    # They cannot be repeated. Since we're repeating the drawing of the textures
+    def add_accompanying_decal(self, decal: ScreenElement):
+        self.accompanying_decal = decal
     
     # def add_to_surf(self) -> tuple[pygame.Surface, pygame.Rect]:
 

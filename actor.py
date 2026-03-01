@@ -82,6 +82,9 @@ class Player:
         self.z = max(0, self.z - self.z_speed)
         self.z_speed = min(self.z_speed + 0.2, 15)
 
+        if pygame.key.get_just_pressed()[pygame.K_SPACE] and self.z == 0:
+            self.z_speed = -2
+
         self.fov += pygame.key.get_pressed()[pygame.K_UP] - pygame.key.get_pressed()[pygame.K_DOWN]
         self.fov = min(180, max(self.fov, 15))
         
@@ -143,7 +146,7 @@ class Player:
         # Added varying heights to walls.
         w, h = dest.get_width(), dest.get_height()
         levels = worldmap.worldheight
-        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight, self.z_lookup, self.direction, self.fov, maph)
+        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight - self.z, self.z_lookup, self.direction, self.fov, maph)
         draw_calls = 0
         for scr_element in all_screen_elements_sorted:
             # All sprites

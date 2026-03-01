@@ -40,6 +40,12 @@ light_pos_dict:dict[tuple[int, int], int] = dict()
 
 oneDoor = Door(10, 1, game_map)
 
+
+# Texture decal test
+wall_decal_texture = textures.fireball_texture
+wall_decal_texture_subsurfaces = textures.fireball_texture_subsurfaces
+wall_decal_coords = (4 * settings.cell_width, 1 * settings.cell_width)
+
 def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, direction, fov, maph:list[list[int]]) -> list[screen_elements.ScreenElement]:
         
 
@@ -156,6 +162,14 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                 # Draw multiple floors at once
                 y_onscreen = screen_height/2-(height/2) - (z/16) * height/2
                 screen_elements_list.append(screen_elements.ScreenElement(i * column_width, y_onscreen, hitDist, height, texture_surface))
+
+                # Drawing a wall decal
+                # near the decal texture
+                if utilityfuncs.point_distance(hitX, hitY, wall_decal_coords[0], wall_decal_coords[1]) < wall_decal_texture.width:
+                    slice_index = min(int(hitX - wall_decal_coords[0]), wall_decal_texture.width)
+                    texture_surf = pygame.transform.scale(wall_decal_texture_subsurfaces[slice_index], (column_width+1, height))
+                    screen_elements_list.append(screen_elements.ScreenElement(i * column_width, screen_height/2-(height/2), hitDist-1, height, texture_surf))
+
             else:
                 percentage_of_cube = (hitY - (int(hitY/settings.cell_width) * settings.cell_width)) / settings.cell_width
                 texture_surface = s_texture_sub[int(percentage_of_cube * s_texture.width)]
@@ -175,6 +189,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                 # Drawing multiple floors at once
                 y_onscreen = screen_height/2-(height/2) - (z/16) * height/2
                 screen_elements_list.append(screen_elements.ScreenElement(i * column_width, y_onscreen, hitDist, height, texture_surface))
+
             
             i += 1
 

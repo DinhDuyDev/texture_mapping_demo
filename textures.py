@@ -14,9 +14,11 @@ dirty_brick_texture_subsurfaces = [ dirty_brick_texture.subsurface(i, 0, 1, dirt
 doom_sky_texture = pygame.image.load("sprites/doom_sky.webp").convert()
 doom_sky_texture_scaled = pygame.transform.scale(doom_sky_texture, (640, 360))
 gore_head_texture = pygame.image.load("sprites/romero_head.png").convert()
+gore_head_texture_subsurfaces = [ gore_head_texture.subsurface(i, 0, 1, gore_head_texture.height) for i in range(gore_head_texture.width) ]
 
 mobster_texture = pygame.image.load("sprites/mobster.png").convert_alpha()
 fireball_texture = pygame.image.load("sprites/fireball.png").convert_alpha()
+fireball_texture_subsurfaces = [ fireball_texture.subsurface(i, 0, 1, fireball_texture.height) for i in range(fireball_texture.width) ]
 lamp_texture = pygame.image.load("sprites/lamp_texture.png").convert_alpha()
 
 quick_access_texture = {
