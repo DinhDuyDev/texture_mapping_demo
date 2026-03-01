@@ -104,3 +104,7 @@ def main():
 main()
 ########################################################################################################
 HWSURFACE is obsolete by this time.
+
+
+# Try out Cython implementation
+https://cython.readthedocs.io/en/latest/src/tutorial/cython_tutorial.html

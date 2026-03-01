@@ -59,8 +59,12 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
         
         i = 0
 
+        fov_ratio = fov / 90
+
+        distance_from_projection = 50 / (fov / resolution)
+
         for dy in range(int(resolution//2), int(-resolution//2), -1):
-            __d = direction + math.degrees(math.atan2(dy, 50 / (fov / resolution)))
+            __d = direction + math.degrees(math.atan2(dy, distance_from_projection))
             if __d != 0:
                 dircos, dirsin = -1, -1
                 verStepX, verStepY = -1, -1
@@ -103,7 +107,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                             hitX = Vx
                             hitY = Vy
                             orientation = 0
-                            hitDist = math.sqrt(horLength) * (fov/90)
+                            hitDist = math.sqrt(horLength) * fov_ratio
                             break
                             
                         Vx += verStepX
@@ -120,7 +124,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                             hitX = Hx
                             hitY = Hy
                             orientation = 1
-                            hitDist = math.sqrt(verLength) * (fov/90)
+                            hitDist = math.sqrt(verLength) * fov_ratio
                             break
                         Hx += horStepX
                         Hy -= horStepY
@@ -168,7 +172,6 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                 # Drawing a wall decal
                 if utilityfuncs.point_distance(hitX, hitY, wall_decal_coords[0], wall_decal_coords[1]) < wall_decal_texture.width and hitX > wall_decal_coords[0]:
                     slice_index = max(min(int(hitX - wall_decal_coords[0]), wall_decal_texture.width), 0)
-                    print("Wall texture width:", wall_decal_texture.width, "Slice index:", slice_index)
                     texture_surf = pygame.transform.scale(wall_decal_texture_subsurfaces[slice_index], (column_width+1, height))
                     strip_y_onscreen = screen_height/2-height/2 - (z/16) * height/2
                     strip.add_accompanying_decal(screen_elements.ScreenElement(i * column_width, strip_y_onscreen, hitDist, height * 0.2, texture_surf))
@@ -197,24 +200,21 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
             i += 1
 
         # Sprite rendering
-        # Can do better -> zbuffering
-        # Basically split up the sprite into different parts.
-        # Can "add" a strip to another -> add a function to the strip.
 
-        fov_ratio = fov / 90
         for sprite in all_visible_sprites:
             sprite_x = sprite.x
             sprite_y = sprite.y
             sprite_z = sprite.z - 16
             direction_to_sprite = utilityfuncs.clamp_directionals(utilityfuncs.point_direction(x, y, sprite_x, sprite_y))
-            distance_to_sprite = utilityfuncs.point_distance(x, y, sprite_x, sprite_y) * fov_ratio + 0.1
+            rescale_factor = math.cos(math.radians(utilityfuncs.clamp_directionals(direction_to_sprite - direction)))
+            distance_to_sprite = utilityfuncs.point_distance(x, y, sprite_x, sprite_y) * fov_ratio * rescale_factor + 0.1
             if distance_to_sprite > 16:
-                left_direction = utilityfuncs.clamp_directionals(direction + (fov/2))
-                delta_dir = utilityfuncs.clamp_directionals(left_direction - direction_to_sprite) / (fov)
+                left_direction = utilityfuncs.clamp_directionals(direction + fov/2)#math.degrees(math.atan2(fov, 50 / (fov / resolution))))
+                delta_dir = (utilityfuncs.clamp_directionals(left_direction - direction_to_sprite) / fov)
                 sprite_x_onscreen = delta_dir * screen_width
-                sprite_height = (RAYCAST_SIZE_SCALE / (distance_to_sprite/height_scale))
+                sprite_height = RAYCAST_SIZE_SCALE / (distance_to_sprite/height_scale)
                 sprite_height = min(sprite_height, MAX_SPRITE_SCALE)
-                sprite_y_onscreen = screen_height/2-(sprite_height/2) * sprite.sprite_scale * fov_ratio - (sprite_z/16) * (sprite_height/2) * fov_ratio - (z/16) * (sprite_height/2) * fov_ratio
+                sprite_y_onscreen = screen_height/2-(sprite_height/2) * sprite.sprite_scale - (sprite_z/16) * (sprite_height/2) - (z/16) * (sprite_height/2)
 
                 if sprite_y_onscreen + z + sprite_height - z_lookup > 0 and sprite_y_onscreen - z_lookup < settings.SCREEN_HEIGHT:
                     screen_elements_list.append(screen_elements.ScreenElement(
@@ -228,7 +228,7 @@ def raycast(screen_width, screen_height, resolution, x, y, z, z_lookup, directio
                         , rescale_val=sprite.sprite_scale
                         , no_repeats=True
                         ))
-
+                    
         screen_elements_list.sort(reverse=True)
         return screen_elements_list
 
@@ -306,14 +306,3 @@ def add_light_source(x:int, y:int, direction:int, field_dir:int, radius:int, map
 
         direction += 0.01
         field_dir -= 0.01
-
-
-
-# class LightSource:
-#     all_light_sources:list[LightSource] = []
-#     def __init__(self, x:int, y:int, direction:int, field_dir:int, radius:int):
-#         self.x = x
-#         self.y = y
-#         self.direction = direction
-#         self.field_dir = field_dir
-#         self.radius = radius

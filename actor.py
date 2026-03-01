@@ -35,13 +35,13 @@ class Player:
         self.movespeed = 1.5
         self.cam_x = self.x
         self.cam_y = self.y
-        self.resolution = BETTER_RES#FOV_RES
+        self.resolution = DEFAULT_RES
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
         self.z_lookup_limit = 256
         self.rof = 0
-        self.fov = 180
+        self.fov = 180#90
 
         self.hitbox_width = 18
         self.hitbox = pygame.Rect(self.x - self.hitbox_width/2, self.y - self.hitbox_width/2, self.hitbox_width, self.hitbox_width)
@@ -104,6 +104,7 @@ class Player:
 
         if pygame.key.get_pressed()[pygame.K_RETURN]:
             self.z_lookup = 0
+            self.fov = 90
 
         # using keys to rotate direction
         rotate_vector = (pygame.key.get_pressed()[pygame.K_LEFT] - pygame.key.get_pressed()[pygame.K_RIGHT]) * (0.01 + int(pygame.key.get_pressed()[pygame.K_LSHIFT]) + 1.99)
@@ -136,8 +137,8 @@ class Player:
                         , self.zheight+16 + self.bob_magnitude, 12
                         , textures.fireball_texture
                         , self.direction + randrange(-3, 3)
-                        , self.z_lookup/8 + randrange(-3, 3)
-                        , 15
+                        , self.z_lookup/8 * (self.fov / 90) ** 0.7 + randrange(-3, 3)
+                        , 5#15
                         )
             self.rof = 0
         self.rof += 1
