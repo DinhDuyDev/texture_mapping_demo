@@ -29,7 +29,7 @@ class Player:
         self.y:int = y
         self.z:int = 0
         self.z_speed:float = 0
-        self.zheight:int = 0
+        self.zheight:int = 16
         self.hsp = 0
         self.vsp = 0
         self.movespeed = 1.5
@@ -124,7 +124,7 @@ class Player:
                 # hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/8 + randrange(-3, 3), 10, maph)
                 FireBall(self.x
                          , self.y
-                         , self.zheight+16 + self.bob_magnitude, 12
+                         , self.z + self.zheight*2 + self.bob_magnitude, 12
                          , textures.fireball_texture
                          , self.direction + randrange(-3, 3)
                          , self.z_lookup/8 + randrange(-3, 3)
@@ -134,7 +134,7 @@ class Player:
         elif pygame.mouse.get_pressed()[2] and self.rof > 2:
             FireBall(self.x
                         , self.y
-                        , self.zheight+16 + self.bob_magnitude, 12
+                        , self.z + self.zheight*2 + self.bob_magnitude, 12
                         , textures.fireball_texture
                         , self.direction + randrange(-3, 3)
                         , self.z_lookup/8 * (self.fov / 90) ** 0.7 + randrange(-3, 3)
