@@ -35,7 +35,7 @@ class Player:
         self.movespeed = 1.5
         self.cam_x = self.x
         self.cam_y = self.y
-        self.resolution = DEFAULT_RES
+        self.resolution = BETTER_RES#FOV_RES
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
@@ -166,6 +166,14 @@ class Player:
                         dest.blit(surf, rect)
                         draw_calls += 1
                     rect.y -= scr_element.height-1
+                
+                if scr_element.accompanying_decal is not None:
+                    decal = scr_element.accompanying_decal
+                    decal_surf, decal_rect = decal.surface_and_rect()
+                    decal_rect.y -= self.z_lookup
+                    if decal_rect.y + decal.height > 0 and decal_rect.y < settings.SCREEN_HEIGHT:
+                        dest.blit(decal_surf, decal_rect)
+
         
         length_of_strips = debug_font.render(f"FOV: {self.fov}", False, (255, 255, 255))
         dest.blit(length_of_strips, length_of_strips.get_rect(topleft=(0, 60)))

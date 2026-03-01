@@ -22,7 +22,7 @@ class ScreenElement:
         self.surface_to_render: pygame.Surface = pygame.transform.scale_by(pygame.transform.scale(surface_to_render, (self.width, self.height)), rescale_val)
         self.rescale_val = rescale_val
         self.no_repeats = no_repeats
-        self.accompanying_decal = None
+        self.accompanying_decal:ScreenElement = None
     
     def surface_and_rect(self) -> tuple[pygame.Surface, pygame.Rect]:
         # Rect scaling
