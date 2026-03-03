@@ -6,6 +6,12 @@ def point_direction(x1:float, y1:float, x2:float, y2:float) -> float:
     deg = math.atan2(-dy, dx)
     return math.degrees(deg)
 
+def polarize_dir(direction: float):
+    dir = clamp_directionals(direction)
+    if dir > 180:
+        dir = -(180 - (dir - 180))
+    return dir
+
 def point_distance(x1:float, y1:float, x2:float, y2:float) -> float:
     return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
 

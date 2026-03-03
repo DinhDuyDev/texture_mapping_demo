@@ -29,19 +29,23 @@ class Player:
         self.y:int = y
         self.z:int = 0
         self.z_speed:float = 0
-        self.zheight:int = 16
+        self.zheight:int = 0
         self.hsp = 0
         self.vsp = 0
         self.movespeed = 1.5
-        self.cam_x = self.x
-        self.cam_y = self.y
-        self.resolution = DEFAULT_RES
+        self.resolution = MAX_RES
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
         self.z_lookup_limit = 256
         self.rof = 0
-        self.fov = 180#90
+        self.fov = 90
+
+        self.planeX = 0
+        self.planeY = math.tan(self.fov/2)
+
+        self.dirX = -1
+        self.dirY = 0
 
         self.hitbox_width = 18
         self.hitbox = pygame.Rect(self.x - self.hitbox_width/2, self.y - self.hitbox_width/2, self.hitbox_width, self.hitbox_width)
@@ -54,8 +58,8 @@ class Player:
         forward_movement = (pygame.key.get_pressed()[pygame.K_w] - pygame.key.get_pressed()[pygame.K_s]) * self.movespeed
         sidestep_movement = (pygame.key.get_pressed()[pygame.K_a] - pygame.key.get_pressed()[pygame.K_d]) * self.movespeed
 
-        self.hsp = pygame.math.lerp(self.hsp, math.cos(math.radians(self.direction)) * forward_movement + math.cos(math.radians(self.direction+90)) * sidestep_movement, 0.2)
-        self.vsp = pygame.math.lerp(self.vsp, math.sin(math.radians(self.direction)) * forward_movement + math.sin(math.radians(self.direction+90)) * sidestep_movement, 0.2)
+        self.hsp = pygame.math.lerp(self.hsp, self.dirX * forward_movement + self.planeX * sidestep_movement, 0.2)#pygame.math.lerp(self.hsp, math.cos(math.radians(self.direction+90)) * forward_movement + math.cos(math.radians(self.direction+90)) * sidestep_movement, 0.2)
+        self.vsp = pygame.math.lerp(self.vsp, -self.dirY * forward_movement - self.planeY * sidestep_movement, 0.2)#pygame.math.lerp(self.vsp, math.sin(math.radians(self.direction+90)) * forward_movement + math.sin(math.radians(self.direction+90)) * sidestep_movement, 0.2)
 
         # collision and movement
         # search for all nearby hitboxes
@@ -79,12 +83,14 @@ class Player:
         self.x += self.hsp
         self.y -= self.vsp
 
+        # Z-control
         self.z = max(0, self.z - self.z_speed)
         self.z_speed = min(self.z_speed + 0.2, 15)
 
         if pygame.key.get_just_pressed()[pygame.K_SPACE] and self.z == 0:
             self.z_speed = -2
 
+        # FOV control
         self.fov += pygame.key.get_pressed()[pygame.K_UP] - pygame.key.get_pressed()[pygame.K_DOWN]
         self.fov = min(180, max(self.fov, 15))
         
@@ -98,7 +104,7 @@ class Player:
             self.bob_magnitude = pygame.math.lerp(self.bob_magnitude, 0, 0.1)
 
         # using mouse rotate direction
-        self.direction -= (pygame.mouse.get_pos()[0] - settings.SCREEN_WIDTH/2) * 0.1
+        mouse_r = (pygame.mouse.get_pos()[0] - settings.SCREEN_WIDTH/2) * 0.15
         self.z_lookup += (pygame.mouse.get_pos()[1] - settings.SCREEN_HEIGHT/2) * 0.75
         self.z_lookup = min(max(-self.z_lookup_limit, self.z_lookup), self.z_lookup_limit)
 
@@ -107,12 +113,17 @@ class Player:
             self.fov = 90
 
         # using keys to rotate direction
-        rotate_vector = (pygame.key.get_pressed()[pygame.K_LEFT] - pygame.key.get_pressed()[pygame.K_RIGHT]) * (0.01 + int(pygame.key.get_pressed()[pygame.K_LSHIFT]) + 1.99)
-        self.direction += rotate_vector
-        self.direction = utilityfuncs.clamp_directionals(self.direction)
+        key_r = (pygame.key.get_pressed()[pygame.K_LEFT] - pygame.key.get_pressed()[pygame.K_RIGHT]) * (0.01 + int(pygame.key.get_pressed()[pygame.K_LSHIFT]) + 1.99)
 
-        self.cam_x = pygame.math.lerp(self.cam_x, self.x, 0.1)
-        self.cam_y = pygame.math.lerp(self.cam_y, self.y, 0.1)
+        rotate_speed = -mouse_r + key_r
+
+        oldDirX = self.dirX
+        self.dirX = self.dirX * math.cos(math.radians(-rotate_speed)) - self.dirY * math.sin(math.radians(-rotate_speed))
+        self.dirY = oldDirX * math.sin(math.radians(-rotate_speed)) + self.dirY * math.cos(math.radians(-rotate_speed))
+
+        oldPlaneX = self.planeX
+        self.planeX = self.planeX * math.cos(math.radians(-rotate_speed)) - self.planeY * math.sin(math.radians(-rotate_speed))
+        self.planeY = oldPlaneX * math.sin(math.radians(-rotate_speed)) + self.planeY * math.cos(math.radians(-rotate_speed))
 
         pygame.mouse.set_pos((settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2))
 
@@ -121,24 +132,23 @@ class Player:
         # Firing projectile
         if pygame.mouse.get_just_pressed()[0] and self.rof > 15:
             for i in range(7):
-                # hitscan(self.x, self.y, 16, 1000, self.direction + randrange(-3, 3), self.z_lookup/8 + randrange(-3, 3), 10, maph)
                 FireBall(self.x
                          , self.y
-                         , self.z + self.zheight*2 + self.bob_magnitude, 12
+                         , self.z + 16 + self.bob_magnitude, 12
                          , textures.fireball_texture
                          , self.direction + randrange(-3, 3)
-                         , self.z_lookup/8 + randrange(-3, 3)
-                         , 15
+                         , self.z_lookup/8 * (self.fov / 90) ** 0.7 + randrange(-3, 3)
+                         , 5
                          )
             self.rof = 0
         elif pygame.mouse.get_pressed()[2] and self.rof > 2:
             FireBall(self.x
                         , self.y
-                        , self.z + self.zheight*2 + self.bob_magnitude, 12
+                        , self.z + 16 + self.bob_magnitude, 12
                         , textures.fireball_texture
                         , self.direction + randrange(-3, 3)
                         , self.z_lookup/8 * (self.fov / 90) ** 0.7 + randrange(-3, 3)
-                        , 5#15
+                        , 5
                         )
             self.rof = 0
         self.rof += 1
@@ -147,7 +157,8 @@ class Player:
         # Added varying heights to walls.
         w, h = dest.get_width(), dest.get_height()
         levels = worldmap.worldheight
-        all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight - self.z, self.z_lookup, self.direction, self.fov, maph)
+        # all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight - self.z, self.z_lookup, self.direction, self.fov, maph, surface=dest)
+        all_screen_elements_sorted = render.raycast_new(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight - self.z, self.dirX, self.dirY, self.planeX, self.planeY, self.fov, maph)
         draw_calls = 0
         for scr_element in all_screen_elements_sorted:
             # All sprites
@@ -176,7 +187,7 @@ class Player:
                         dest.blit(decal_surf, decal_rect)
 
         
-        length_of_strips = debug_font.render(f"FOV: {self.fov}", False, (255, 255, 255))
+        length_of_strips = debug_font.render(f"Screen Elements: {len(all_screen_elements_sorted)}", False, (255, 255, 255))
         dest.blit(length_of_strips, length_of_strips.get_rect(topleft=(0, 60)))
 
 
