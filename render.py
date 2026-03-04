@@ -49,7 +49,6 @@ wall_decal_coords = (5 * settings.cell_width, 1 * settings.cell_width)
 
 
 def raycast_new(screen_width, screen_height, resolution, x, y, z, dirX, dirY, planeX, planeY, fov, maph:list[list[int]]):
-    resolution = int(resolution // 4)
     height_scale = 2
     column_width = screen_width / resolution
 
@@ -133,9 +132,9 @@ def raycast_new(screen_width, screen_height, resolution, x, y, z, dirX, dirY, pl
 
         height = min(RAYCAST_SIZE_SCALE / (perpWallDist * height_scale), 1280)
 
-        # texture surfae
+        # texture surface
         texture_surface = pygame.transform.scale(texture_strips[texX], (column_width, height))
-        texture_y = screen_height/2-height/2 - (z/16) * height
+        texture_y = screen_height/2-height/2 - ((z-16)/32) * height
 
         strip = screen_elements.ScreenElement((resolution-i) * column_width, texture_y, perpWallDist, height+0.1, texture_surface)
         screen_elements_list.append(strip)
@@ -152,6 +151,7 @@ def raycast_new(screen_width, screen_height, resolution, x, y, z, dirX, dirY, pl
 
             sprite_x = __x - pX
             sprite_y = __y - pY
+            sprite_z = sprite.z - 16
 
             invDet = 1.0 / (-planeX * dirY + dirX * planeY) # required for correct matrix multiplication
             transformX = invDet * (dirY * sprite_x - dirX * sprite_y)
@@ -162,7 +162,7 @@ def raycast_new(screen_width, screen_height, resolution, x, y, z, dirX, dirY, pl
 
             sprite_screen_x = int((screen_width / 2) * (1 + (transformX / transformY)))
             sprite_height = min(abs(int(screen_height / transformY / height_scale)), 1280)
-            sprite_screen_y = (screen_height/2) - (sprite_height/2) * sprite.sprite_scale - (sprite.z/16) * (sprite_height/2) - (z/16) * (sprite_height/2)
+            sprite_screen_y = (screen_height/2) - (sprite_height/2) * sprite.sprite_scale - (sprite_z/32) * (sprite_height) - (z/32) * (sprite_height)
 
             screen_elements_list.append(screen_elements.ScreenElement(
                 sprite_screen_x

@@ -29,11 +29,11 @@ class Player:
         self.y:int = y
         self.z:int = 0
         self.z_speed:float = 0
-        self.zheight:int = 0
+        self.zheight:int = 16
         self.hsp = 0
         self.vsp = 0
         self.movespeed = 1.5
-        self.resolution = MAX_RES
+        self.resolution = BETTER_RES#MAX_RES
         self.direction = 0
         self.locked_dir = 0
         self.z_lookup = 0
@@ -85,11 +85,11 @@ class Player:
         self.y -= self.vsp
 
         # Z-control
-        self.z = max(0, self.z - self.z_speed)
+        self.z = max(16, self.z - self.z_speed)
         self.z_speed = min(self.z_speed + 0.2, 15)
 
         if pygame.key.get_just_pressed()[pygame.K_SPACE] and self.z == 0:
-            self.z_speed = -2
+            self.z_speed = -4#-2
 
         # FOV control
         self.fov += pygame.key.get_pressed()[pygame.K_UP] - pygame.key.get_pressed()[pygame.K_DOWN]
@@ -130,15 +130,15 @@ class Player:
 
     def firing(self):
         # Firing projectile
-        if pygame.mouse.get_just_pressed()[0] and self.rof > 15:
+        if pygame.mouse.get_pressed()[0] and self.rof > 15:
             __d = utilityfuncs.point_direction(0, 0, self.dirX, self.dirY)
             for i in range(7):
                 FireBall(self.x
                          , self.y
-                         , self.z + self.bob_magnitude, 12
+                         , self.z + 0 + self.bob_magnitude, 12
                          , textures.fireball_texture
                          , __d + randrange(-3, 3)
-                         , self.z_lookup/8 * (self.fov / 90) ** 0.7 + randrange(-3, 3)
+                         , self.z_lookup/2 + randrange(-3, 3)
                          , 5
                          )
             self.rof = 0
@@ -146,10 +146,10 @@ class Player:
             __d = utilityfuncs.point_direction(0, 0, self.dirX, self.dirY)
             FireBall(self.x
                         , self.y
-                        , self.z + self.bob_magnitude, 12
+                        , self.z + 0 + self.bob_magnitude, 12
                         , textures.fireball_texture
                         , __d + randrange(-3, 3)
-                        , self.z_lookup/8 * (self.fov / 90) ** 0.7 + randrange(-3, 3)
+                        , self.z_lookup/2 + randrange(-3, 3)
                         , 5
                         )
             self.rof = 0
@@ -160,7 +160,7 @@ class Player:
         w, h = dest.get_width(), dest.get_height()
         levels = worldmap.worldheight
         # all_screen_elements_sorted = render.raycast(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight - self.z, self.z_lookup, utilityfuncs.point_direction(0, 0, self.dirX, self.dirY), self.fov, maph, surface=dest)
-        all_screen_elements_sorted = render.raycast_new(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.zheight - self.z, self.dirX, self.dirY, self.planeX, self.planeY, self.fov, maph)
+        all_screen_elements_sorted = render.raycast_new(w, h, self.resolution, self.x, self.y, self.bob_magnitude - self.z + self.zheight, self.dirX, self.dirY, self.planeX, self.planeY, self.fov, maph)
         draw_calls = 0
         for scr_element in all_screen_elements_sorted:
             # All sprites
