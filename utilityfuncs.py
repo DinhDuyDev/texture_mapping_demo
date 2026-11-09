@@ -56,10 +56,3 @@ def clamp_directionals(direction: float):
         elif direction < 0:
             direction += 360
     return direction
-    
-    
-def utilityfuncs():
-    print("Thank you for using utilityfuncs :)")
-
-
-utilityfuncs()
